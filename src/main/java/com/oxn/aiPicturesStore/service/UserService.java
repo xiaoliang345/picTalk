@@ -1,5 +1,6 @@
 package com.oxn.aiPicturesStore.service;
 
+import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.http.server.HttpServerRequest;
 import com.oxn.aiPicturesStore.model.entity.User;
 import com.baomidou.mybatisplus.extension.service.IService;
@@ -39,4 +40,26 @@ public interface UserService extends IService<User> {
      * @return
      */
     String getEncryptPassword(String userPassword);
+
+    /**
+     * 获取当前登录用户
+     *
+     * @param request
+     * @return
+     */
+    User getLoginUser(HttpServletRequest request);
+
+    /**
+     * 获取登录用户信息(用户使用)
+     * @param user
+     * @return
+     */
+    UserLoginVo getUserLoginVo(User user);
+
+    /**
+     * 用户注册
+     * @param request
+     * @return
+     */
+    boolean userLogout(HttpServletRequest request);
 }

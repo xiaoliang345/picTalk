@@ -10,10 +10,7 @@ import com.oxn.aiPicturesStore.model.entity.User;
 import com.oxn.aiPicturesStore.model.vo.UserLoginVo;
 import com.oxn.aiPicturesStore.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletRequest;
 
@@ -53,5 +50,28 @@ public class UserController {
         String checkPassword = userRegisterRequest.getCheckPassword();
         long n = userService.userRegister(userAccount, userPassword, checkPassword);
         return ResultUtils.success(n);
+    }
+
+    /**
+     * 获取登录用户信息
+     *
+     * @param request
+     * @return
+     */
+    @GetMapping("/get/login")
+    public BaseResponse<UserLoginVo> getLoginUser(HttpServletRequest request) {
+        User user = userService.getLoginUser(request);
+        return ResultUtils.success(userService.getUserLoginVo(user));
+    }
+
+    /**
+     * 用户注销
+     *
+     * @param request
+     * @return
+     */
+    @GetMapping("/logout")
+    public BaseResponse<Boolean> userLogout(HttpServletRequest request) {
+        return ResultUtils.success(userService.userLogout(request));
     }
 }

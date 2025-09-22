@@ -118,6 +118,59 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
         final String SALT = "ai_pictures_store_oxn";
         return DigestUtils.md5DigestAsHex((SALT+userPassword).getBytes());
     }
+
+    /**
+     * 获取登录用户信息(管理员使用)
+     * @param request
+     * @return
+     */
+    @Override
+    public User getLoginUser(HttpServletRequest request) {
+        Object obj = request.getSession().getAttribute(UserConstant.USER_LOGIN_STATE);
+        User user=(User) obj;
+        if(user==null||user.getId()==null){
+            throw new BusinessException(StatusCode.NOT_LOGIN_ERROR);
+        }
+        Long id = user.getId();
+        User loginUser = this.getById(id);
+        if(loginUser==null){
+            throw new BusinessException(StatusCode.NOT_LOGIN_ERROR);
+        }
+        return loginUser;
+    }
+
+    /**
+     * 信息脱敏
+     * @param user
+     * @return
+     */
+    @Override
+    public UserLoginVo getUserLoginVo(User user) {
+        if(user==null){
+           return null;
+        }
+        UserLoginVo userLoginVo = new UserLoginVo();
+        BeanUtil.copyProperties(user,userLoginVo);
+        return userLoginVo;
+    }
+
+    /**
+     * 用户注册
+     * @param request
+     * @return
+     */
+    @Override
+    public boolean userLogout(HttpServletRequest request) {
+        Object obj = request.getSession().getAttribute(UserConstant.USER_LOGIN_STATE);
+        User user=(User) obj;
+        if(user==null||user.getId()==null){
+            throw new BusinessException(StatusCode.NOT_LOGIN_ERROR,"用户未登录");
+        }
+        request.getSession().removeAttribute(UserConstant.USER_LOGIN_STATE);
+        return true;
+    }
+
+
 }
 
 
