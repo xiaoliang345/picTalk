@@ -1,6 +1,8 @@
 package com.oxn.aiPicturesStore.service.impl;
 
 import cn.hutool.core.bean.BeanUtil;
+import cn.hutool.core.util.ObjUtil;
+import cn.hutool.core.util.StrUtil;
 import cn.hutool.http.server.HttpServerRequest;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
@@ -8,8 +10,10 @@ import com.oxn.aiPicturesStore.constant.UserConstant;
 import com.oxn.aiPicturesStore.enums.StatusCode;
 import com.oxn.aiPicturesStore.exception.BusinessException;
 import com.oxn.aiPicturesStore.exception.ThrowUtils;
+import com.oxn.aiPicturesStore.model.dto.user.UserQueryRequest;
 import com.oxn.aiPicturesStore.model.entity.User;
 import com.oxn.aiPicturesStore.model.vo.UserLoginVo;
+import com.oxn.aiPicturesStore.model.vo.UserVO;
 import com.oxn.aiPicturesStore.service.UserService;
 import com.oxn.aiPicturesStore.mapper.UserMapper;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,6 +22,9 @@ import org.springframework.util.DigestUtils;
 
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Collectors;
 
 /**
 * @author 34576
@@ -100,6 +107,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
         User user = new User();
         user.setUserAccount(userAccount);
         user.setUserPassword(encryptPassword);
+        user.setUserAvatar("https://img.itouxiang.com/m12/13/9a/19cff7d61987.jpg");
         user.setUserName("萌新");
         int insert = userMapper.insert(user);
         if(insert<=0){
@@ -107,6 +115,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
         }
         return user.getId();
     }
+
 
     /**
      * 获取加密密码
@@ -169,6 +178,62 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
         request.getSession().removeAttribute(UserConstant.USER_LOGIN_STATE);
         return true;
     }
+
+    /**
+     * 获取用户信息脱敏
+     * @param user
+     * @return
+     */
+    @Override
+    public UserVO getUserVo(User user) {
+        if(user==null){
+            return null;
+        }
+        UserVO userVO = new UserVO();
+        BeanUtil.copyProperties(user,userVO);
+        return userVO;
+    }
+
+    /**
+     * 获取用户信息列表脱敏
+     * @param list
+     * @return
+     */
+    @Override
+    public List<UserVO> getUserVoList(List<User> list) {
+        if(list.isEmpty()){
+            return new ArrayList<>();
+        }
+        return list.stream().map(this::getUserVo).collect(Collectors.toList());
+    }
+
+    /**
+     * 获取查询条件
+     * @param userQueryRequest
+     * @return
+     */
+    @Override
+    public QueryWrapper<User> getQueryWrapper(UserQueryRequest userQueryRequest) {
+        if (userQueryRequest == null) {
+            throw new BusinessException(StatusCode.PARAMS_ERROR, "请求参数为空");
+        }
+        Long id = userQueryRequest.getId();
+        String userAccount = userQueryRequest.getUserAccount();
+        String userName = userQueryRequest.getUserName();
+        String userProfile = userQueryRequest.getUserProfile();
+        String userRole = userQueryRequest.getUserRole();
+        String sortField = userQueryRequest.getSortField();
+        String sortOrder = userQueryRequest.getSortOrder();
+        QueryWrapper<User> queryWrapper = new QueryWrapper<>();
+        queryWrapper.eq(id != null && id != 0L, "id", id);
+        queryWrapper.eq(StrUtil.isNotBlank(userRole), "userRole", userRole);
+        queryWrapper.like(StrUtil.isNotBlank(userAccount), "userAccount", userAccount);
+        queryWrapper.like(StrUtil.isNotBlank(userName), "userName", userName);
+        queryWrapper.like(StrUtil.isNotBlank(userProfile), "userProfile", userProfile);
+        queryWrapper.orderBy(StrUtil.isNotEmpty(sortField), sortOrder.equals("ascend"), sortField);
+        return queryWrapper;
+    }
+
 
 
 }

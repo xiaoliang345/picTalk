@@ -1,12 +1,15 @@
 package com.oxn.aiPicturesStore.service;
 
-import cn.hutool.core.bean.BeanUtil;
-import cn.hutool.http.server.HttpServerRequest;
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.oxn.aiPicturesStore.model.dto.user.UserQueryRequest;
 import com.oxn.aiPicturesStore.model.entity.User;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.oxn.aiPicturesStore.model.vo.UserLoginVo;
+import com.oxn.aiPicturesStore.model.vo.UserVO;
 
 import javax.servlet.http.HttpServletRequest;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
 * @author 34576
@@ -50,7 +53,7 @@ public interface UserService extends IService<User> {
     User getLoginUser(HttpServletRequest request);
 
     /**
-     * 获取登录用户信息(用户使用)
+     * 获取登录用户信息(脱敏)
      * @param user
      * @return
      */
@@ -62,4 +65,27 @@ public interface UserService extends IService<User> {
      * @return
      */
     boolean userLogout(HttpServletRequest request);
+
+    /**
+     * 获取用户信息(脱敏)
+     * @param user
+     * @return
+     */
+    UserVO getUserVo(User user);
+
+    /**
+     * 获取用户信息列表(脱敏)
+     *
+     * @param list
+     * @return
+     */
+    List<UserVO> getUserVoList(List<User> list);
+
+    /**
+     * 获取查询包装类
+     *
+     * @param userQueryRequest
+     * @return
+     */
+    QueryWrapper<User> getQueryWrapper(UserQueryRequest userQueryRequest);
 }

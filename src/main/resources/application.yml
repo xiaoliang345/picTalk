@@ -1,7 +1,5 @@
 spring:
   application: aiPicturesStore
-  profiles:
-    active: dev
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
     url: jdbc:mysql://localhost:3306/ai_pictures_store
@@ -23,6 +21,7 @@ mybatis-plus:
       logic-delete-field: deleted
       logic-delete-value: 1
       logic-not-delete-value: 0
+
 knife4j:
   enable: true
   openapi:

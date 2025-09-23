@@ -3,6 +3,8 @@ package com.oxn.aiPicturesStore.model.entity;
 import com.baomidou.mybatisplus.annotation.*;
 
 import java.util.Date;
+
+import io.swagger.annotations.ApiParam;
 import lombok.Data;
 
 /**
@@ -21,6 +23,7 @@ public class User {
     /**
      * 账号
      */
+    @ApiParam(value = "账号")
     private String userAccount;
 
     /**

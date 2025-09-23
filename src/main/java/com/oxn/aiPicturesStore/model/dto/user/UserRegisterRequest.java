@@ -1,4 +1,4 @@
-package com.oxn.aiPicturesStore.model.dto;
+package com.oxn.aiPicturesStore.model.dto.user;
 
 import lombok.Data;
 
