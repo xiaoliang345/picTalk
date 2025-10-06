@@ -8,8 +8,8 @@ public class UploadPictureResult {
     /**  
      * 图片地址  
      */  
-    private String url;  
-  
+    private String url;
+
     /**  
      * 图片名称  
      */  
