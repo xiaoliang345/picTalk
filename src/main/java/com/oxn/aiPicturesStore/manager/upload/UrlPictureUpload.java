@@ -59,7 +59,7 @@ public class UrlPictureUpload extends PictureUploadTemplate {
             if (StrUtil.isNotBlank(type)) {
                 ThrowUtils.throwIf(!PictureConstant.FILE_TYPE.contains(type), StatusCode.PARAMS_ERROR, "文件类型有误");
             }
-            //判断文件大小
+            //TODO:判断文件大小
             String length = response.header("Content-Length");
             if (StrUtil.isNotBlank(length)) {
                 long parseLong = Long.parseLong(length);

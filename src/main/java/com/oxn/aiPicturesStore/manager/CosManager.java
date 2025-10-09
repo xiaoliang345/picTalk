@@ -55,7 +55,7 @@ public class CosManager {
      * @param file     文件
      * @param fileName
      */
-    public PutObjectResult putPictureObject(String key, File file, String fileName) {
+    public PutObjectResult putPictureObject(String key, File file,String fileName) {
         PutObjectRequest putObjectRequest = new PutObjectRequest(cosClientConfig.getBucket(), key,
                 file);
         // 对图片进行处理（获取基本信息也被视作为一种处理）
@@ -63,15 +63,18 @@ public class CosManager {
         // 1 表示返回原图信息
         picOperations.setIsPicInfo(1);
         List<PicOperations.Rule> rules = new ArrayList<>();
+        // 图片压缩（转成 webp 格式）
+        String webpKey = fileName.split("\\.")[0] + ".webp";
         PicOperations.Rule compressRule = new PicOperations.Rule();
-        compressRule.setRule("imageMogr2/rquality/80");
+        compressRule.setRule("imageMogr2/format/webp");
         compressRule.setBucket(cosClientConfig.getBucket());
-        compressRule.setFileId(fileName);
+        compressRule.setFileId(webpKey);
         rules.add(compressRule);
         // 构造处理参数
         picOperations.setRules(rules);
         putObjectRequest.setPicOperations(picOperations);
         return cosClient.putObject(putObjectRequest);
     }
+
 
 }

@@ -41,8 +41,8 @@ public abstract class PictureUploadTemplate {
         //图片上传地址
         String originalFilename =getOriginalFilename(inputSource);
         String uuid = RandomUtil.randomString(5);
-        //拼接路径
         String fileName = String.format("%s.%s", uuid, fileType);
+        //拼接路径
         String filePath = String.format("%s/%s", uploadPathPrefix, fileName);
         File file = null;
         try {
