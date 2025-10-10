@@ -11,6 +11,7 @@ import com.oxn.aiPicturesStore.enums.PictureReviewStatusEnum;
 import com.oxn.aiPicturesStore.enums.StatusCode;
 import com.oxn.aiPicturesStore.exception.BusinessException;
 import com.oxn.aiPicturesStore.exception.ThrowUtils;
+import com.oxn.aiPicturesStore.manager.CosManager;
 import com.oxn.aiPicturesStore.manager.FileManager;
 import com.oxn.aiPicturesStore.manager.upload.FilePictureUpload;
 import com.oxn.aiPicturesStore.manager.upload.PictureUploadTemplate;
@@ -38,6 +39,8 @@ import org.springframework.stereotype.Service;
 
 import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -53,10 +56,6 @@ import java.util.stream.Collectors;
 public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
         implements PictureService {
 
-
-    @Autowired
-    private FileManager fileManager;
-
     @Autowired
     private UserService userService;
 
@@ -65,6 +64,9 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
 
     @Autowired
     private UrlPictureUpload urlPictureUpload;
+
+    @Autowired
+    private CosManager cosManager;
 
     @Override
     public PictureVO uploadPicture(Object inputSource, PictureUploadRequest pictureUploadRequest, User loginUser) {
@@ -97,10 +99,9 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
         picture.setUrl(uploadPictureResult.getUrl());
         picture.setThumbnailUrl(uploadPictureResult.getThumbnailUrl());
         //如果指定了文件名前缀则使用，没有的话就使用从URL中解析的名称
-        if(StrUtil.isNotBlank(pictureUploadRequest.getPicName())){
+        if (StrUtil.isNotBlank(pictureUploadRequest.getPicName())) {
             picture.setName(pictureUploadRequest.getPicName());
-        }
-        else{
+        } else {
             picture.setName(uploadPictureResult.getPicName());
         }
         picture.setPicSize(uploadPictureResult.getPicSize());
@@ -274,12 +275,12 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
         int count = pictureUploadByBatchRequest.getCount();
         String searchText = pictureUploadByBatchRequest.getSearchText();
         String namePrefix = pictureUploadByBatchRequest.getNamePrefix();
-        if(StrUtil.isBlank(namePrefix)){
-            namePrefix=pictureUploadByBatchRequest.getSearchText();
+        if (StrUtil.isBlank(namePrefix)) {
+            namePrefix = pictureUploadByBatchRequest.getSearchText();
         }
         ThrowUtils.throwIf(count > 10, StatusCode.PARAMS_ERROR, "抓取数量不能超过十条");
         //抓取图片
-        String fetchUrl = String.format("https://cn.bing.com/images/async?q=%s&mmasync=1", searchText+"壁纸");
+        String fetchUrl = String.format("https://cn.bing.com/images/async?q=%s&mmasync=1", searchText + "壁纸");
         Document document;
         try {
             document = Jsoup.connect(fetchUrl).get();
@@ -300,24 +301,39 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
             }
             // 过滤空URL
             if (!imgUrl.isEmpty()) {
-                try{
-                    imgUrl=imgUrl.split("\\?")[0];
+                try {
+                    imgUrl = imgUrl.split("\\?")[0];
                     // 达到指定数量则停止
                     PictureUploadRequest pictureUploadRequest = new PictureUploadRequest();
-                    pictureUploadRequest.setPicName(namePrefix+count);
+                    pictureUploadRequest.setPicName(namePrefix + count);
 
                     PictureVO pictureVO = this.uploadPicture(imgUrl, pictureUploadRequest, loginUser);
                     if (ObjUtil.isNotEmpty(pictureVO)) {
                         count--;
                         if (count == 0) break;
                     }
-                }catch (Exception e){
-                    log.error("图片抓取失败"+imgUrl);
-                    throw new BusinessException(StatusCode.OPERATION_ERROR,"图片抓取失败");
+                } catch (Exception e) {
+                    log.error("图片抓取失败" + imgUrl);
+                    throw new BusinessException(StatusCode.OPERATION_ERROR, "图片抓取失败");
                 }
             }
         }
         return count;
+    }
+
+    @Override
+    public void deleteObject(Picture picture) {
+        String path = null;
+        try {
+            path = new URL(picture.getUrl()).getPath();
+            cosManager.deleteObject(path);
+            //删除缩略图
+            if (!picture.getThumbnailUrl().isEmpty())
+                path = new URL(picture.getThumbnailUrl()).getPath();
+            cosManager.deleteObject(path);
+        } catch (MalformedURLException e) {
+            throw new BusinessException(StatusCode.OPERATION_ERROR,"服务器图片删除失败");
+        }
     }
 
 }

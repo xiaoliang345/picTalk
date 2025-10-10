@@ -15,6 +15,7 @@ import com.qcloud.cos.transfer.Upload;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.servlet.http.HttpServletRequest;
+import java.net.MalformedURLException;
 
 /**
  * @author 34576
@@ -84,4 +85,10 @@ public interface PictureService extends IService<Picture> {
      */
     Integer uploadPictureByBatch(PictureUploadByBatchRequest pictureUploadByBatchRequest,
                                  User loginUser);
+
+    /**
+     * 删除cos图片
+     * @param picture
+     */
+    void deleteObject(Picture picture) throws MalformedURLException;
 }

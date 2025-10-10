@@ -42,6 +42,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.File;
 import java.io.IOException;
+import java.net.MalformedURLException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -120,7 +121,7 @@ public class PictureController {
      * 删除图片
      */
     @PostMapping("/delete")
-    public BaseResponse<Boolean> deletePicture(@RequestBody DeleteRequest deleteRequest, HttpServletRequest request) {
+    public BaseResponse<Boolean> deletePicture(@RequestBody DeleteRequest deleteRequest, HttpServletRequest request) throws MalformedURLException {
         if (deleteRequest == null || deleteRequest.getId() <= 0) {
             throw new BusinessException(StatusCode.PARAMS_ERROR);
         }
@@ -136,6 +137,7 @@ public class PictureController {
         // 操作数据库  
         boolean result = pictureService.removeById(id);
         ThrowUtils.throwIf(!result, StatusCode.OPERATION_ERROR);
+        pictureService.deleteObject(oldPicture);
         return ResultUtils.success(true);
     }
 
