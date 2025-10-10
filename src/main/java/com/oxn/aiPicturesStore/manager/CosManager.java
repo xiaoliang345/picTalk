@@ -55,7 +55,7 @@ public class CosManager {
      * @param file     文件
      * @param fileName
      */
-    public PutObjectResult putPictureObject(String key, File file,String fileName) {
+    public PutObjectResult putPictureObject(String key, File file, String fileName) {
         PutObjectRequest putObjectRequest = new PutObjectRequest(cosClientConfig.getBucket(), key,
                 file);
         // 对图片进行处理（获取基本信息也被视作为一种处理）
@@ -70,6 +70,15 @@ public class CosManager {
         compressRule.setBucket(cosClientConfig.getBucket());
         compressRule.setFileId(webpKey);
         rules.add(compressRule);
+        // 图片缩小（缩略图）对500kb以上的图片生效
+        if (file.length() > 500 * 1024) {
+            PicOperations.Rule thumbnail = new PicOperations.Rule();
+            webpKey = fileName.split("\\.")[0] + "_thumbnail" + fileName.split("\\.")[1];
+            thumbnail.setRule(String.format("imageMogr2/thumbnail/%sx%s>", 512, 512));
+            thumbnail.setBucket(cosClientConfig.getBucket());
+            thumbnail.setFileId(webpKey);
+            rules.add(thumbnail);
+        }
         // 构造处理参数
         picOperations.setRules(rules);
         putObjectRequest.setPicOperations(picOperations);

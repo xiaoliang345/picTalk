@@ -39,7 +39,7 @@ public abstract class PictureUploadTemplate {
         //校验图片
         String fileType = validPicture(inputSource);
         //图片上传地址
-        String originalFilename =getOriginalFilename(inputSource);
+        String originalFilename = getOriginalFilename(inputSource);
         String uuid = RandomUtil.randomString(5);
         String fileName = String.format("%s.%s", uuid, fileType);
         //拼接路径
@@ -48,18 +48,21 @@ public abstract class PictureUploadTemplate {
         try {
             // 上传文件
             file = File.createTempFile(filePath, null);
-            processFile(inputSource,file);
+            processFile(inputSource, file);
             PutObjectResult putObjectResult = cosManager.putPictureObject(filePath, file, fileName);
             //获取图片信息对象
             ImageInfo imageInfo = putObjectResult.getCiUploadResult().getOriginalInfo().getImageInfo();
             ProcessResults processResults = putObjectResult.getCiUploadResult().getProcessResults();
             List<CIObject> objectList = processResults.getObjectList();
-            if(!objectList.isEmpty()){
+            if (!objectList.isEmpty()) {
                 //获取压缩后的图片
                 CIObject ciObject = objectList.get(0);
-                return buildResult(originalFilename,ciObject);
+                CIObject thumbnaiObject=null;
+                if(1<objectList.size())
+                    thumbnaiObject= objectList.get(1);
+                return buildResult(originalFilename, ciObject, thumbnaiObject);
             }
-            return buildResult(imageInfo,filePath,originalFilename,file);
+            return buildResult(imageInfo, filePath, originalFilename, file);
         } catch (Exception e) {
             log.error("file upload error, filepath = " + filePath, e);
             throw new BusinessException(StatusCode.SYSTEM_ERROR, "上传失败");
@@ -70,11 +73,13 @@ public abstract class PictureUploadTemplate {
 
     /**
      * 封装返回对象
+     *
      * @param originalFilename
      * @param ciObject
+     * @param thumbnaiObject
      * @return
      */
-    private UploadPictureResult buildResult(String originalFilename, CIObject ciObject) {
+    private UploadPictureResult buildResult(String originalFilename, CIObject ciObject, CIObject thumbnaiObject) {
         //获取宽高和宽高比
         int width = ciObject.getWidth();
         int height = ciObject.getHeight();
@@ -82,6 +87,12 @@ public abstract class PictureUploadTemplate {
         //封装返回结果
         UploadPictureResult uploadPictureResult = new UploadPictureResult();
         uploadPictureResult.setUrl(cosClientConfig.getHost() + "/" + ciObject.getKey());
+        //没有缩略图则用压缩图
+        if (thumbnaiObject != null && thumbnaiObject.getKey() != null)
+            uploadPictureResult.setThumbnailUrl(cosClientConfig.getHost() + "/" + thumbnaiObject.getKey());
+        else{
+            uploadPictureResult.setThumbnailUrl(cosClientConfig.getHost() + "/" + ciObject.getKey());
+        }
         uploadPictureResult.setPicName(FileUtil.mainName(originalFilename));
         uploadPictureResult.setPicSize(Long.valueOf(ciObject.getSize()));
         uploadPictureResult.setPicWidth(width);
@@ -93,13 +104,14 @@ public abstract class PictureUploadTemplate {
 
     /**
      * 封装返回对象
+     *
      * @param imageInfo
      * @param filePath
      * @param originalFilename
      * @param file
      * @return
      */
-    private UploadPictureResult buildResult(ImageInfo imageInfo, String filePath, String originalFilename, File file){
+    private UploadPictureResult buildResult(ImageInfo imageInfo, String filePath, String originalFilename, File file) {
         //获取宽高和宽高比
         int width = imageInfo.getWidth();
         int height = imageInfo.getHeight();
@@ -115,11 +127,12 @@ public abstract class PictureUploadTemplate {
         uploadPictureResult.setPicFormat(imageInfo.getFormat());
         return uploadPictureResult;
     }
+
     protected abstract void processFile(Object inputSource, File file) throws IOException;
 
-    protected abstract  String getOriginalFilename(Object inputSource);
+    protected abstract String getOriginalFilename(Object inputSource);
 
-    protected abstract String validPicture(Object inputSource) ;
+    protected abstract String validPicture(Object inputSource);
 
 
     /**
