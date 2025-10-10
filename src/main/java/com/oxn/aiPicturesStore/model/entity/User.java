@@ -2,6 +2,7 @@ package com.oxn.aiPicturesStore.model.entity;
 
 import com.baomidou.mybatisplus.annotation.*;
 
+import java.io.Serializable;
 import java.util.Date;
 
 import io.swagger.annotations.ApiParam;
@@ -13,7 +14,7 @@ import lombok.Data;
  */
 @TableName(value ="user")
 @Data
-public class User {
+public class User implements Serializable {
     /**
      * id
      */
