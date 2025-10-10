@@ -54,15 +54,15 @@ public abstract class PictureUploadTemplate {
             ImageInfo imageInfo = putObjectResult.getCiUploadResult().getOriginalInfo().getImageInfo();
             ProcessResults processResults = putObjectResult.getCiUploadResult().getProcessResults();
             List<CIObject> objectList = processResults.getObjectList();
+            //获取压缩图、缩略图
+            CIObject ciObject = null;
+            CIObject thumbnaiObject = null;
             if (!objectList.isEmpty()) {
-                //获取压缩后的图片
-                CIObject ciObject = objectList.get(0);
-                CIObject thumbnaiObject=null;
-                if(1<objectList.size())
-                    thumbnaiObject= objectList.get(1);
-                return buildResult(originalFilename, ciObject, thumbnaiObject);
+                ciObject = objectList.get(0);
+                if (1 < objectList.size())
+                    thumbnaiObject = objectList.get(1);
             }
-            return buildResult(imageInfo, filePath, originalFilename, file);
+            return buildResult(imageInfo, originalFilename, file, ciObject, thumbnaiObject);
         } catch (Exception e) {
             log.error("file upload error, filepath = " + filePath, e);
             throw new BusinessException(StatusCode.SYSTEM_ERROR, "上传失败");
@@ -74,51 +74,25 @@ public abstract class PictureUploadTemplate {
     /**
      * 封装返回对象
      *
-     * @param originalFilename
-     * @param ciObject
-     * @param thumbnaiObject
-     * @return
-     */
-    private UploadPictureResult buildResult(String originalFilename, CIObject ciObject, CIObject thumbnaiObject) {
-        //获取宽高和宽高比
-        int width = ciObject.getWidth();
-        int height = ciObject.getHeight();
-        double picScale = NumberUtil.round((double) width / height, 2).doubleValue();
-        //封装返回结果
-        UploadPictureResult uploadPictureResult = new UploadPictureResult();
-        uploadPictureResult.setUrl(cosClientConfig.getHost() + "/" + ciObject.getKey());
-        //没有缩略图则用压缩图
-        if (thumbnaiObject != null && thumbnaiObject.getKey() != null)
-            uploadPictureResult.setThumbnailUrl(cosClientConfig.getHost() + "/" + thumbnaiObject.getKey());
-        else{
-            uploadPictureResult.setThumbnailUrl(cosClientConfig.getHost() + "/" + ciObject.getKey());
-        }
-        uploadPictureResult.setPicName(FileUtil.mainName(originalFilename));
-        uploadPictureResult.setPicSize(Long.valueOf(ciObject.getSize()));
-        uploadPictureResult.setPicWidth(width);
-        uploadPictureResult.setPicHeight(height);
-        uploadPictureResult.setPicScale(picScale);
-        uploadPictureResult.setPicFormat(ciObject.getFormat());
-        return uploadPictureResult;
-    }
-
-    /**
-     * 封装返回对象
-     *
      * @param imageInfo
-     * @param filePath
      * @param originalFilename
      * @param file
      * @return
      */
-    private UploadPictureResult buildResult(ImageInfo imageInfo, String filePath, String originalFilename, File file) {
+    private UploadPictureResult buildResult(ImageInfo imageInfo, String originalFilename, File file, CIObject ciObject, CIObject thumbnaiObject) {
         //获取宽高和宽高比
         int width = imageInfo.getWidth();
         int height = imageInfo.getHeight();
         double picScale = NumberUtil.round((double) width / height, 2).doubleValue();
         //封装返回结果
         UploadPictureResult uploadPictureResult = new UploadPictureResult();
-        uploadPictureResult.setUrl(cosClientConfig.getHost() + "/" + filePath);
+        //没有缩略图则用压缩图
+        if (thumbnaiObject != null && thumbnaiObject.getKey() != null)
+            uploadPictureResult.setThumbnailUrl(cosClientConfig.getHost() + "/" + thumbnaiObject.getKey());
+        else {
+            uploadPictureResult.setThumbnailUrl(cosClientConfig.getHost() + "/" + ciObject.getKey());
+        }
+        uploadPictureResult.setUrl(cosClientConfig.getHost() + "/" + ciObject.getKey());
         uploadPictureResult.setPicName(FileUtil.mainName(originalFilename));
         uploadPictureResult.setPicSize(FileUtil.size(file));
         uploadPictureResult.setPicWidth(width);
