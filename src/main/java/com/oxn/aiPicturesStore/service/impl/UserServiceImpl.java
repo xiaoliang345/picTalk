@@ -68,7 +68,6 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
         request.getSession().setAttribute(UserConstant.USER_LOGIN_STATE,user);
         UserLoginVo userLoginVo = new UserLoginVo();
         BeanUtil.copyProperties(user,userLoginVo);
-        userLoginVo.setUserAvatar("https://c-ssl.duitang.com/uploads/blog/202503/10/OoSP1wybF6YdPge.jpeg");
         return userLoginVo;
     }
 
