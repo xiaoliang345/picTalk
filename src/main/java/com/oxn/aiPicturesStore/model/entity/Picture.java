@@ -78,9 +78,19 @@ public class Picture {
     private String picFormat;
 
     /**
+     * 图片主色调
+     */
+    private String picColor;
+
+    /**
      * 创建用户 id
      */
     private Long userId;
+
+    /**
+     * 空间id
+     */
+    private Long spaceId;
 
     /**
      * 创建时间
