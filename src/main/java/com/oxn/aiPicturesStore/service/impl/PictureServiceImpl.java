@@ -18,16 +18,16 @@ import com.oxn.aiPicturesStore.manager.upload.PictureUploadTemplate;
 import com.oxn.aiPicturesStore.manager.upload.UrlPictureUpload;
 import com.oxn.aiPicturesStore.mapper.PictureMapper;
 import com.oxn.aiPicturesStore.model.dto.file.UploadPictureResult;
-import com.oxn.aiPicturesStore.model.dto.picture.PictureQueryRequest;
-import com.oxn.aiPicturesStore.model.dto.picture.PictureReviewRequest;
-import com.oxn.aiPicturesStore.model.dto.picture.PictureUploadByBatchRequest;
-import com.oxn.aiPicturesStore.model.dto.picture.PictureUploadRequest;
+import com.oxn.aiPicturesStore.model.dto.picture.*;
 import com.oxn.aiPicturesStore.model.entity.Picture;
+import com.oxn.aiPicturesStore.model.entity.Space;
 import com.oxn.aiPicturesStore.model.entity.User;
 import com.oxn.aiPicturesStore.model.vo.PictureVO;
 import com.oxn.aiPicturesStore.model.vo.UserVO;
 import com.oxn.aiPicturesStore.service.PictureService;
+import com.oxn.aiPicturesStore.service.SpaceService;
 import com.oxn.aiPicturesStore.service.UserService;
+import com.oxn.aiPicturesStore.utils.HexColorSimilarityUtil;
 import org.bouncycastle.asn1.cms.PasswordRecipientInfo;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -41,10 +41,7 @@ import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -58,6 +55,9 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
 
     @Autowired
     private UserService userService;
+
+    @Autowired
+    private SpaceService spaceService;
 
     @Autowired
     private FilePictureUpload filePictureUpload;
@@ -109,6 +109,7 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
         picture.setPicHeight(uploadPictureResult.getPicHeight());
         picture.setPicScale(uploadPictureResult.getPicScale());
         picture.setPicFormat(uploadPictureResult.getPicFormat());
+        picture.setPicColor(uploadPictureResult.getPicColor());
         picture.setUserId(loginUser.getId());
         //补充审核参数
         this.fillReviewParams(picture, loginUser);
@@ -147,6 +148,8 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
         Long reviewerId = pictureQueryRequest.getReviewerId();
         String sortField = pictureQueryRequest.getSortField();
         String sortOrder = pictureQueryRequest.getSortOrder();
+        Date startEditTime = pictureQueryRequest.getStartEditTime();
+        Date endEditTime = pictureQueryRequest.getEndEditTime();
         // 从多字段中搜索
         if (StrUtil.isNotBlank(searchText)) {
             // 需要拼接查询条件
@@ -167,7 +170,8 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
         queryWrapper.eq(ObjUtil.isNotEmpty(picScale), "picScale", picScale);
         queryWrapper.eq(ObjUtil.isNotEmpty(reviewStatus), "reviewStatus", reviewStatus);
         queryWrapper.eq(ObjUtil.isNotEmpty(reviewerId) && !reviewerId.equals(0L), "reviewerId", reviewerId);
-
+        queryWrapper.ge(ObjUtil.isNotEmpty(startEditTime),"editTime",startEditTime);
+        queryWrapper.le(ObjUtil.isNotEmpty(endEditTime),"editTime",endEditTime);
 
         // JSON 数组查询
         if (CollUtil.isNotEmpty(tags)) {
@@ -333,6 +337,93 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
             cosManager.deleteObject(path);
         } catch (MalformedURLException e) {
             throw new BusinessException(StatusCode.OPERATION_ERROR,"服务器图片删除失败");
+        }
+    }
+
+    @Override
+    public List<PictureVO> searchPictureByColor(Long spaceId, String picColor, User loginUser) {
+        //参数校验
+        ThrowUtils.throwIf(spaceId==null||StrUtil.isBlank(picColor),StatusCode.PARAMS_ERROR);
+        ThrowUtils.throwIf(loginUser==null,StatusCode.NOT_LOGIN_ERROR);
+        Space space = spaceService.getById(spaceId);
+        ThrowUtils.throwIf(space==null,StatusCode.PARAMS_ERROR,"空间不存在");
+        //权限校验
+        if(!Objects.equals(space.getUserId(), loginUser.getId())){
+            throw new BusinessException(StatusCode.NO_AUTH_ERROR);
+        }
+        //查询空间下有色调的图片
+        List<Picture> pictureList = this.lambdaQuery()
+                .eq(Picture::getSpaceId, spaceId)
+                .isNotNull(Picture::getPicColor)
+                .list();
+        // 处理空列表：直接返回空列表
+        if (pictureList == null || pictureList.isEmpty()) {
+            return new ArrayList<>();
+        }
+
+        // 遍历列表，计算每个图片与目标颜色的相似度，按相似度降序排序
+        return pictureList.stream()
+                .map(PictureVO::objToVo)
+                .sorted((pic1, pic2) -> {
+                    // 计算两个图片与目标颜色的相似度（使用HSV算法，更符合人眼感知）
+                    int similarity1 = HexColorSimilarityUtil.calculateSimilarityByHSV(picColor, pic1.getPicColor());
+                    int similarity2 = HexColorSimilarityUtil.calculateSimilarityByHSV(picColor, pic2.getPicColor());
+                    // 按相似度从大到小排序（降序）
+                    return Integer.compare(similarity2, similarity1);
+                })
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public void editPictureByBatch(PictureEditByBatchRequest pictureEditByBatchRequest, User loginUser) {
+        //参数校验
+        List<Long> pictureIdList = pictureEditByBatchRequest.getPictureIdList();
+        Long spaceId = pictureEditByBatchRequest.getSpaceId();
+        String category = pictureEditByBatchRequest.getCategory();
+        List<String> tags = pictureEditByBatchRequest.getTags();
+        ThrowUtils.throwIf(spaceId==null||pictureIdList.isEmpty(),StatusCode.PARAMS_ERROR);
+        ThrowUtils.throwIf(loginUser==null,StatusCode.NO_AUTH_ERROR);
+        Space space = spaceService.getById(spaceId);
+        if(space==null){
+            throw new BusinessException(StatusCode.PARAMS_ERROR,"空间不存在");
+        }
+        //校验空间权限
+        if(!space.getUserId().equals(loginUser.getId())){
+            throw new BusinessException(StatusCode.NO_AUTH_ERROR,"当前空间无权限");
+        }
+        //构建查询条件
+        List<Picture> list = this.lambdaQuery()
+                .select(Picture::getId, Picture::getSpaceId)
+                .eq(Picture::getSpaceId, spaceId)
+                .in(Picture::getId, pictureIdList)
+                .list();
+        if(list.isEmpty())return;
+        list.forEach(item->{
+            if(StrUtil.isNotBlank(category))item.setCategory(category);
+            if(!tags.isEmpty())item.setTags(tags.toString());
+        });
+        String nameRule = pictureEditByBatchRequest.getNameRule();
+        fillPictureWithNameRule(list,nameRule);
+        boolean b = this.updateBatchById(list);
+        ThrowUtils.throwIf(!b,StatusCode.OPERATION_ERROR);
+    }
+
+    /**
+     * 根据nameRule命名：图片{序号}
+     * @param list
+     * @param nameRule
+     */
+    public void fillPictureWithNameRule(List<Picture> list,String nameRule){
+        if(StrUtil.isBlank(nameRule)){
+            return ;
+        }
+        int count=1;
+        try{
+            for(Picture item:list){
+                item.setName(nameRule.replace("{序号}",String.valueOf(count++)));
+            }
+        }catch (Exception e){
+            throw new BusinessException(StatusCode.OPERATION_ERROR,"名称解析错误");
         }
     }
 

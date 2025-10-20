@@ -4,10 +4,7 @@ import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.oxn.aiPicturesStore.enums.PictureReviewStatusEnum;
-import com.oxn.aiPicturesStore.model.dto.picture.PictureQueryRequest;
-import com.oxn.aiPicturesStore.model.dto.picture.PictureReviewRequest;
-import com.oxn.aiPicturesStore.model.dto.picture.PictureUploadByBatchRequest;
-import com.oxn.aiPicturesStore.model.dto.picture.PictureUploadRequest;
+import com.oxn.aiPicturesStore.model.dto.picture.*;
 import com.oxn.aiPicturesStore.model.entity.Picture;
 import com.oxn.aiPicturesStore.model.entity.User;
 import com.oxn.aiPicturesStore.model.vo.PictureVO;
@@ -16,6 +13,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import javax.servlet.http.HttpServletRequest;
 import java.net.MalformedURLException;
+import java.util.List;
 
 /**
  * @author 34576
@@ -91,4 +89,22 @@ public interface PictureService extends IService<Picture> {
      * @param picture
      */
     void deleteObject(Picture picture) throws MalformedURLException;
+
+    /**
+     * 按照颜色相似度查询图片
+     *
+     * @param spaceId spaceId
+     * @param picColor 颜色
+     * @param loginUser 登录的用户
+     * @return 图片 vo 结合
+     */
+    List<PictureVO> searchPictureByColor(Long spaceId, String picColor, User loginUser);
+
+    /**
+     * 批量编辑图片
+     * @param pictureEditByBatchRequest
+     * @param loginUser
+     */
+    void editPictureByBatch(PictureEditByBatchRequest pictureEditByBatchRequest,User loginUser);
+
 }
