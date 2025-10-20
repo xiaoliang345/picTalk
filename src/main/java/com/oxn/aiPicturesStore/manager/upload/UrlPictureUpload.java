@@ -52,14 +52,13 @@ public class UrlPictureUpload extends PictureUploadTemplate {
             //发送HEAD请求验证文件
             response = HttpUtil.createRequest(Method.HEAD, fileUrl).execute();
             if (response.getStatus() != HttpStatus.HTTP_OK) {
-                return "";
+                return "jpeg";
             }
             //判断文件类型
             String type = response.header("Content-Type");
             if (StrUtil.isNotBlank(type)) {
                 ThrowUtils.throwIf(!PictureConstant.FILE_TYPE.contains(type), StatusCode.PARAMS_ERROR, "文件类型有误");
             }
-            //TODO:判断文件大小
             String length = response.header("Content-Length");
             if (StrUtil.isNotBlank(length)) {
                 long parseLong = Long.parseLong(length);

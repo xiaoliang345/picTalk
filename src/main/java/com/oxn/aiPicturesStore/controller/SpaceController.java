@@ -92,9 +92,7 @@ public class SpaceController {
         Space oldSpace = spaceService.getById(id);
         ThrowUtils.throwIf(oldSpace == null, StatusCode.NOT_FOUND_ERROR);
         // 仅本人或管理员可删除  
-        if (!oldSpace.getUserId().equals(loginUser.getId()) && !userService.isAdmin(loginUser)) {
-            throw new BusinessException(StatusCode.NO_AUTH_ERROR);
-        }
+        spaceService.chechUserHasAuth(loginUser,oldSpace);
         // 操作数据库  
         boolean result = spaceService.removeById(id);
         ThrowUtils.throwIf(!result, StatusCode.OPERATION_ERROR);
@@ -179,7 +177,9 @@ public class SpaceController {
         long size = spaceQueryRequest.getPageSize();
         // 限制爬虫  
         ThrowUtils.throwIf(size > 20, StatusCode.PARAMS_ERROR);
-        // 查询数据库  
+        // 查询数据库
+        User loginUser = userService.getLoginUser(request);
+        spaceQueryRequest.setUserId(loginUser.getId());
         Page<Space> spacePage = spaceService.page(new Page<>(current, size),
                 spaceService.getQueryWrapper(spaceQueryRequest));
         // 获取封装类  

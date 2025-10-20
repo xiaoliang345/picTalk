@@ -107,4 +107,11 @@ public interface PictureService extends IService<Picture> {
      */
     void editPictureByBatch(PictureEditByBatchRequest pictureEditByBatchRequest,User loginUser);
 
+    /**
+     * 根据描述生成新图片
+     * @param description
+     * @param picture
+     * @return
+     */
+    String pictureUpdateByAI(String description,Picture picture);
 }

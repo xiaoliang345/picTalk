@@ -176,6 +176,13 @@ public class SpaceServiceImpl extends ServiceImpl<SpaceMapper, Space>
         if(space.getMaxCount()==null)space.setMaxCount(Long.valueOf(maxCount));
         if(space.getMaxSize()==null)space.setMaxSize(Long.valueOf(maxSize));
     }
+
+    @Override
+    public void chechUserHasAuth(User loginUser, Space space) {
+        if (!space.getUserId().equals(loginUser.getId()) && !userService.isAdmin(loginUser)) {
+            throw new BusinessException(StatusCode.NO_AUTH_ERROR);
+        }
+    }
 }
 
 
