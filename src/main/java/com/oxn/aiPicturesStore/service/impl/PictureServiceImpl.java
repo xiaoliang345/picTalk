@@ -13,6 +13,7 @@ import com.oxn.aiPicturesStore.exception.BusinessException;
 import com.oxn.aiPicturesStore.exception.ThrowUtils;
 import com.oxn.aiPicturesStore.manager.CosManager;
 import com.oxn.aiPicturesStore.manager.FileManager;
+import com.oxn.aiPicturesStore.manager.ImageEditService;
 import com.oxn.aiPicturesStore.manager.upload.FilePictureUpload;
 import com.oxn.aiPicturesStore.manager.upload.PictureUploadTemplate;
 import com.oxn.aiPicturesStore.manager.upload.UrlPictureUpload;
@@ -67,6 +68,9 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
 
     @Autowired
     private CosManager cosManager;
+
+    @Autowired
+    private ImageEditService imageEditService;
 
     @Override
     public PictureVO uploadPicture(Object inputSource, PictureUploadRequest pictureUploadRequest, User loginUser) {
@@ -406,6 +410,12 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
         fillPictureWithNameRule(list,nameRule);
         boolean b = this.updateBatchById(list);
         ThrowUtils.throwIf(!b,StatusCode.OPERATION_ERROR);
+    }
+
+    @Override
+    public String pictureUpdateByAI(String description, Picture picture) {
+        String newPictureUrl = imageEditService.editImage(picture.getUrl(), description);
+        return newPictureUrl;
     }
 
     /**

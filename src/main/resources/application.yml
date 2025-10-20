@@ -24,9 +24,6 @@ server:
   port: 8123
   servlet:
     context-path: /api
-#    session:
-#      cookie:
-#        max-age: 30m
 
 mybatis-plus:
   configuration:
@@ -46,7 +43,12 @@ knife4j:
     version: 1.0
     group:
       default:
-        group-name: 默认分组
+#        group-name: 默认分组
         api-rule: package
         api-rule-resources:
           - com.oxn.aiPicturesStore.controller
+
+# DashScope 配置
+dashscope:
+  apiKey: sk-3d14e742252746e6aba673324b64b41d # 替换为你的DashScope API Key
+  apiUrl: https://dashscope.aliyuncs.com/api/v1/services/aigc/multimodal-generation/generation
