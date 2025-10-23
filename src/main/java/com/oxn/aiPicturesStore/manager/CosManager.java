@@ -46,6 +46,7 @@ public class CosManager {
      */
     public COSObject getObject(String key) {
         GetObjectRequest getObjectRequest = new GetObjectRequest(cosClientConfig.getBucket(), key);
+
         return cosClient.getObject(getObjectRequest);
     }
 
