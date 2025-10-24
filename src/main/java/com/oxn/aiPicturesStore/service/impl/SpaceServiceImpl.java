@@ -8,11 +8,13 @@ import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.oxn.aiPicturesStore.enums.SpaceLevelEnum;
+import com.oxn.aiPicturesStore.enums.SpaceTypeEnum;
 import com.oxn.aiPicturesStore.enums.StatusCode;
 import com.oxn.aiPicturesStore.exception.BusinessException;
 import com.oxn.aiPicturesStore.exception.ThrowUtils;
 import com.oxn.aiPicturesStore.model.dto.space.SpaceAddRequest;
 import com.oxn.aiPicturesStore.model.dto.space.SpaceQueryRequest;
+import com.oxn.aiPicturesStore.model.dto.spaceuser.SpaceUserAddRequest;
 import com.oxn.aiPicturesStore.model.entity.Picture;
 import com.oxn.aiPicturesStore.model.entity.Space;
 import com.oxn.aiPicturesStore.model.entity.User;
@@ -21,6 +23,7 @@ import com.oxn.aiPicturesStore.model.vo.SpaceVO;
 import com.oxn.aiPicturesStore.model.vo.UserVO;
 import com.oxn.aiPicturesStore.service.SpaceService;
 import com.oxn.aiPicturesStore.mapper.SpaceMapper;
+import com.oxn.aiPicturesStore.service.SpaceUserService;
 import com.oxn.aiPicturesStore.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -59,11 +62,15 @@ public class SpaceServiceImpl extends ServiceImpl<SpaceMapper, Space>
         //1参数填充
         Integer spaceLevel = space.getSpaceLevel();
         String spaceName = space.getSpaceName();
+        Integer spaceType = space.getSpaceType();
         if(spaceName==null){
             space.setSpaceName("默认空间");
         }
         if(spaceLevel==null){
             space.setSpaceLevel(SpaceLevelEnum.COMMON.getValue());
+        }
+        if(spaceType==null){
+            space.setSpaceLevel(SpaceTypeEnum.PRIVATE.getValue());
         }
         Long userId = loginUser.getId();
         space.setUserId(userId);
@@ -81,6 +88,7 @@ public class SpaceServiceImpl extends ServiceImpl<SpaceMapper, Space>
                 Long execute = transactionTemplate.execute(status -> {
                     boolean exists = this.lambdaQuery()
                             .eq(Space::getUserId, userId)
+                            .eq(Space::getSpaceType,space.getSpaceType())
                             .exists();
                     ThrowUtils.throwIf(exists, StatusCode.OPERATION_ERROR, "不能创建多个个人空间");
                     boolean save = this.save(space);
@@ -105,12 +113,14 @@ public class SpaceServiceImpl extends ServiceImpl<SpaceMapper, Space>
         Long id = spaceQueryRequest.getId();
         Long userId = spaceQueryRequest.getUserId();
         Integer spaceLevel = spaceQueryRequest.getSpaceLevel();
+        Integer spaceType = spaceQueryRequest.getSpaceType();
         String spaceName = spaceQueryRequest.getSpaceName();
         String sortField = spaceQueryRequest.getSortField();
         String sortOrder = spaceQueryRequest.getSortOrder();
         queryWrapper.eq(ObjUtil.isNotEmpty(id) && !id.equals(0L), "id", id);
         queryWrapper.eq(ObjUtil.isNotEmpty(userId) && !userId.equals(0L), "userId", userId);
-        queryWrapper.eq(ObjUtil.isNotEmpty(spaceLevel) && !spaceLevel.equals(0L), "spaceLevel", spaceLevel);
+        queryWrapper.eq(ObjUtil.isNotEmpty(spaceLevel), "spaceLevel", spaceLevel);
+        queryWrapper.eq(ObjUtil.isNotEmpty(spaceType), "spaceType", spaceType);
         queryWrapper.like(StrUtil.isNotBlank(spaceName), "spaceName", spaceName);
         // 排序
         queryWrapper.orderBy(StrUtil.isNotEmpty(sortField), sortOrder.equals("ascend"), sortField);
@@ -157,11 +167,16 @@ public class SpaceServiceImpl extends ServiceImpl<SpaceMapper, Space>
     public void validSpace(Space space,Boolean add) {
         Integer spaceLevel = space.getSpaceLevel();
         String spaceName = space.getSpaceName();
+        Integer spaceType = space.getSpaceType();
         if(StrUtil.isBlank(spaceName)||spaceName.length()>=20){
             throw new BusinessException(StatusCode.PARAMS_ERROR,"空间名称错误");
         }
         SpaceLevelEnum enumByValue = SpaceLevelEnum.getEnumByValue(spaceLevel);
         if(enumByValue==null||spaceLevel==null){
+            throw new BusinessException(StatusCode.PARAMS_ERROR,"空间级别错误");
+        }
+        SpaceTypeEnum value = SpaceTypeEnum.getEnumByValue(spaceType);
+        if(spaceType==null||value==null){
             throw new BusinessException(StatusCode.PARAMS_ERROR,"空间类型错误");
         }
     }
