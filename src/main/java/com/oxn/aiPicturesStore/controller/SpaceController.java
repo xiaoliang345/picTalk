@@ -50,18 +50,6 @@ public class SpaceController {
     @Autowired
     private UserService userService;
 
-    @Autowired
-    private StringRedisTemplate stringRedisTemplate;
-
-    //LOCAL_CACHE配置
-    private final Cache<String, String> LOCAL_CACHE =
-            Caffeine.newBuilder().initialCapacity(1024)
-                    .maximumSize(10000L)
-                    // 缓存 5 分钟移除
-                    .expireAfterWrite(10L, TimeUnit.SECONDS)
-                    .build();
-
-
     /**
      * 创建空间
      *

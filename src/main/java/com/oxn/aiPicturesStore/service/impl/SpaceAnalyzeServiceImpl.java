@@ -120,8 +120,8 @@ public class SpaceAnalyzeServiceImpl extends ServiceImpl<SpaceMapper, Space>
         List<SpaceCategoryAnalyzeResponse> list;
         list = pictureService.getBaseMapper().selectMaps(queryWrapper).stream().map(item -> {
             String category = item.get("category").toString();
-            Long count = (Long) item.get("count");
-            Long totalSize = (Long) item.get("totalSize");
+            Long count = ((Number) item.get("count")).longValue();
+            Long totalSize = ((Number) item.get("totalSize")).longValue();
             return new SpaceCategoryAnalyzeResponse(category, count, totalSize);
         }).collect(Collectors.toList());
         return list;

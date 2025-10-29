@@ -24,10 +24,12 @@ import com.oxn.aiPicturesStore.manager.AiTaskManager;
 import com.oxn.aiPicturesStore.manager.CosManager;
 import com.oxn.aiPicturesStore.model.dto.picture.*;
 import com.oxn.aiPicturesStore.model.entity.Picture;
+import com.oxn.aiPicturesStore.model.entity.Space;
 import com.oxn.aiPicturesStore.model.entity.User;
 import com.oxn.aiPicturesStore.model.vo.PictureTagCategory;
 import com.oxn.aiPicturesStore.model.vo.PictureVO;
 import com.oxn.aiPicturesStore.service.PictureService;
+import com.oxn.aiPicturesStore.service.SpaceService;
 import com.oxn.aiPicturesStore.service.UserService;
 import com.qcloud.cos.model.COSObject;
 import com.qcloud.cos.model.COSObjectInputStream;
@@ -68,6 +70,9 @@ public class PictureController {
     private UserService userService;
 
     @Autowired
+    private SpaceService spaceService;
+
+    @Autowired
     private StringRedisTemplate stringRedisTemplate;
 
     @Autowired
@@ -84,6 +89,7 @@ public class PictureController {
     @Autowired
     @Qualifier("taskExecutor")
     private Executor taskExecutor;
+
 
 
 
@@ -142,18 +148,10 @@ public class PictureController {
         }
         User loginUser = userService.getLoginUser(request);
         long id = deleteRequest.getId();
-        // 判断是否存在  
+        // 判断是否存在
         Picture oldPicture = pictureService.getById(id);
-        ThrowUtils.throwIf(oldPicture == null, StatusCode.NOT_FOUND_ERROR);
-        // 仅本人或管理员可删除  
-        if (!oldPicture.getUserId().equals(loginUser.getId()) && !userService.isAdmin(loginUser)) {
-            throw new BusinessException(StatusCode.NO_AUTH_ERROR);
-        }
-        // 操作数据库  
-        boolean result = pictureService.removeById(id);
-        ThrowUtils.throwIf(!result, StatusCode.OPERATION_ERROR);
-        pictureService.deleteObject(oldPicture);
-        return ResultUtils.success(true);
+        Boolean b = pictureService.deletePicture(oldPicture, loginUser);
+        return ResultUtils.success(b);
     }
 
     /**
@@ -239,6 +237,15 @@ public class PictureController {
         ThrowUtils.throwIf(size > 20, StatusCode.PARAMS_ERROR);
         //普通用户只能看到审核通过的图片
         pictureQueryRequest.setReviewStatus(PictureReviewStatusEnum.PASS.getValue());
+        //如果spaceId为null，则查询所有图片，否则查询指定空间下的图片，需要当前用户是空间管理员或者空间成员
+        Long spaceId = pictureQueryRequest.getSpaceId();
+        if( spaceId!=null){
+            Space space = spaceService.getById(spaceId);
+            ThrowUtils.throwIf(space==null,StatusCode.NOT_FOUND_ERROR);
+            User loginUser = userService.getLoginUser(request);
+            spaceService.chechUserHasAuth(loginUser,space);
+        }
+
         // 查询数据库  
         Page<Picture> picturePage = pictureService.page(new Page<>(current, size),
                 pictureService.getQueryWrapper(pictureQueryRequest));
@@ -329,8 +336,8 @@ public class PictureController {
     @GetMapping("/tag_category")
     public BaseResponse<PictureTagCategory> listPictureTagCategory() {
         PictureTagCategory pictureTagCategory = new PictureTagCategory();
-        pictureTagCategory.setCategorieList(PictureConstant.categorieList);
-        pictureTagCategory.setTagList(PictureConstant.tagList);
+        pictureTagCategory.setCategoryMap(PictureConstant.categoryMap);
+        pictureTagCategory.setTagMap(PictureConstant.tagMap);
         return ResultUtils.success(pictureTagCategory);
     }
 
