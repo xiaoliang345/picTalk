@@ -119,7 +119,7 @@ public class SpaceUserController {
         return ResultUtils.success(true);
     }
 
-    /**
+    /**     
      * 查询我加入的团队空间列表
      */
     @PostMapping("/list/my")

@@ -114,4 +114,12 @@ public interface PictureService extends IService<Picture> {
      * @return
      */
     String pictureUpdateByAI(String description,Picture picture);
+
+    /**
+     * 删除图片
+     * @param picture
+     * @param loginUser
+     * @return
+     */
+    Boolean deletePicture(Picture picture,User loginUser);
 }

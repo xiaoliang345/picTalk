@@ -4,6 +4,8 @@ import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.util.ObjUtil;
 import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
+import com.baomidou.mybatisplus.extension.conditions.update.LambdaUpdateChainWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.oxn.aiPicturesStore.constant.PictureConstant;
@@ -37,6 +39,7 @@ import org.jsoup.select.Elements;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.support.TransactionTemplate;
 
 import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
@@ -71,6 +74,9 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
 
     @Autowired
     private ImageEditService imageEditService;
+
+    @Autowired
+    private TransactionTemplate transactionTemplate;
 
     @Override
     public PictureVO uploadPicture(Object inputSource, PictureUploadRequest pictureUploadRequest, User loginUser) {
@@ -115,6 +121,10 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
         picture.setPicFormat(uploadPictureResult.getPicFormat());
         picture.setPicColor(uploadPictureResult.getPicColor());
         picture.setUserId(loginUser.getId());
+        Long spaceId = pictureUploadRequest.getSpaceId();
+        if (spaceId != null) {
+            picture.setSpaceId(spaceId);
+        }
         //补充审核参数
         this.fillReviewParams(picture, loginUser);
         // 如果 pictureId 不为空，表示更新，否则是新增
@@ -123,8 +133,19 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
             picture.setId(pictureId);
             picture.setEditTime(new Date());
         }
-        boolean result = this.saveOrUpdate(picture);
-        ThrowUtils.throwIf(!result, StatusCode.OPERATION_ERROR, "图片上传失败");
+        transactionTemplate.execute(status -> {
+            boolean result = this.saveOrUpdate(picture);
+            ThrowUtils.throwIf(!result, StatusCode.OPERATION_ERROR, "图片上传失败");
+            if (spaceId != null) {
+                boolean update = spaceService.lambdaUpdate()
+                        .eq(Space::getId, spaceId)
+                        .setSql("totalCount=totalCount+" +1)
+                        .setSql("totalSize=totalSize+" + picture.getPicSize())
+                        .update();
+                ThrowUtils.throwIf(!update, StatusCode.OPERATION_ERROR, "空间信息更新失败");
+            }
+            return status;
+        });
         return PictureVO.objToVo(picture);
     }
 
@@ -147,6 +168,7 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
         String picFormat = pictureQueryRequest.getPicFormat();
         String searchText = pictureQueryRequest.getSearchText();
         Long userId = pictureQueryRequest.getUserId();
+        Long spaceId = pictureQueryRequest.getSpaceId();
         Integer reviewStatus = pictureQueryRequest.getReviewStatus();
         String reviewMessage = pictureQueryRequest.getReviewMessage();
         Long reviewerId = pictureQueryRequest.getReviewerId();
@@ -164,6 +186,13 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
         }
         queryWrapper.eq(ObjUtil.isNotEmpty(id) && !id.equals(0L), "id", id);
         queryWrapper.eq(ObjUtil.isNotEmpty(userId), "userId", userId);
+        if (ObjUtil.isNotEmpty(spaceId)) {
+            // spaceId 有值：只查等于该值的
+            queryWrapper.eq("spaceId", spaceId);
+        } else {
+            // spaceId 为空（null 或 empty）：只查 spaceId 为 NULL 的记录
+            queryWrapper.isNull("spaceId");
+        }
         queryWrapper.like(StrUtil.isNotBlank(name), "name", name);
         queryWrapper.like(StrUtil.isNotBlank(introduction), "introduction", introduction);
         queryWrapper.like(StrUtil.isNotBlank(picFormat), "picFormat", picFormat);
@@ -174,8 +203,8 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
         queryWrapper.eq(ObjUtil.isNotEmpty(picScale), "picScale", picScale);
         queryWrapper.eq(ObjUtil.isNotEmpty(reviewStatus), "reviewStatus", reviewStatus);
         queryWrapper.eq(ObjUtil.isNotEmpty(reviewerId) && !reviewerId.equals(0L), "reviewerId", reviewerId);
-        queryWrapper.ge(ObjUtil.isNotEmpty(startEditTime),"editTime",startEditTime);
-        queryWrapper.le(ObjUtil.isNotEmpty(endEditTime),"editTime",endEditTime);
+        queryWrapper.ge(ObjUtil.isNotEmpty(startEditTime), "editTime", startEditTime);
+        queryWrapper.le(ObjUtil.isNotEmpty(endEditTime), "editTime", endEditTime);
 
         // JSON 数组查询
         if (CollUtil.isNotEmpty(tags)) {
@@ -340,19 +369,19 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
                 path = new URL(picture.getThumbnailUrl()).getPath();
             cosManager.deleteObject(path);
         } catch (MalformedURLException e) {
-            throw new BusinessException(StatusCode.OPERATION_ERROR,"服务器图片删除失败");
+            throw new BusinessException(StatusCode.OPERATION_ERROR, "服务器图片删除失败");
         }
     }
 
     @Override
     public List<PictureVO> searchPictureByColor(Long spaceId, String picColor, User loginUser) {
         //参数校验
-        ThrowUtils.throwIf(spaceId==null||StrUtil.isBlank(picColor),StatusCode.PARAMS_ERROR);
-        ThrowUtils.throwIf(loginUser==null,StatusCode.NOT_LOGIN_ERROR);
+        ThrowUtils.throwIf(spaceId == null || StrUtil.isBlank(picColor), StatusCode.PARAMS_ERROR);
+        ThrowUtils.throwIf(loginUser == null, StatusCode.NOT_LOGIN_ERROR);
         Space space = spaceService.getById(spaceId);
-        ThrowUtils.throwIf(space==null,StatusCode.PARAMS_ERROR,"空间不存在");
+        ThrowUtils.throwIf(space == null, StatusCode.PARAMS_ERROR, "空间不存在");
         //权限校验
-        if(!Objects.equals(space.getUserId(), loginUser.getId())){
+        if (!Objects.equals(space.getUserId(), loginUser.getId())) {
             throw new BusinessException(StatusCode.NO_AUTH_ERROR);
         }
         //查询空间下有色调的图片
@@ -385,15 +414,15 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
         Long spaceId = pictureEditByBatchRequest.getSpaceId();
         String category = pictureEditByBatchRequest.getCategory();
         List<String> tags = pictureEditByBatchRequest.getTags();
-        ThrowUtils.throwIf(spaceId==null||pictureIdList.isEmpty(),StatusCode.PARAMS_ERROR);
-        ThrowUtils.throwIf(loginUser==null,StatusCode.NO_AUTH_ERROR);
+        ThrowUtils.throwIf(spaceId == null || pictureIdList.isEmpty(), StatusCode.PARAMS_ERROR);
+        ThrowUtils.throwIf(loginUser == null, StatusCode.NO_AUTH_ERROR);
         Space space = spaceService.getById(spaceId);
-        if(space==null){
-            throw new BusinessException(StatusCode.PARAMS_ERROR,"空间不存在");
+        if (space == null) {
+            throw new BusinessException(StatusCode.PARAMS_ERROR, "空间不存在");
         }
         //校验空间权限
-        if(!space.getUserId().equals(loginUser.getId())){
-            throw new BusinessException(StatusCode.NO_AUTH_ERROR,"当前空间无权限");
+        if (!space.getUserId().equals(loginUser.getId())) {
+            throw new BusinessException(StatusCode.NO_AUTH_ERROR, "当前空间无权限");
         }
         //构建查询条件
         List<Picture> list = this.lambdaQuery()
@@ -401,15 +430,15 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
                 .eq(Picture::getSpaceId, spaceId)
                 .in(Picture::getId, pictureIdList)
                 .list();
-        if(list.isEmpty())return;
-        list.forEach(item->{
-            if(StrUtil.isNotBlank(category))item.setCategory(category);
-            if(!tags.isEmpty())item.setTags(tags.toString());
+        if (list.isEmpty()) return;
+        list.forEach(item -> {
+            if (StrUtil.isNotBlank(category)) item.setCategory(category);
+            if (!tags.isEmpty()) item.setTags(tags.toString());
         });
         String nameRule = pictureEditByBatchRequest.getNameRule();
-        fillPictureWithNameRule(list,nameRule);
+        fillPictureWithNameRule(list, nameRule);
         boolean b = this.updateBatchById(list);
-        ThrowUtils.throwIf(!b,StatusCode.OPERATION_ERROR);
+        ThrowUtils.throwIf(!b, StatusCode.OPERATION_ERROR);
     }
 
     @Override
@@ -418,22 +447,46 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
         return newPictureUrl;
     }
 
+    @Override
+    public Boolean deletePicture(Picture picture, User loginUser) {
+        ThrowUtils.throwIf(picture == null, StatusCode.NOT_FOUND_ERROR);
+        // 仅管理员可删除
+        if (!userService.isAdmin(loginUser)) {
+            throw new BusinessException(StatusCode.NO_AUTH_ERROR);
+        }
+        // 操作数据库
+        boolean result = this.removeById(picture.getId());
+        ThrowUtils.throwIf(!result, StatusCode.OPERATION_ERROR);
+        //如果删除的为空间图片，则修改空间容量
+        if (picture.getSpaceId() != null) {
+            boolean update = spaceService.lambdaUpdate()
+                    .eq(Space::getId, picture.getSpaceId())
+                    .setSql("totalCount=totalCount-" + 1)
+                    .setSql("totalSize=totalSize-" + picture.getPicSize())
+                    .update();
+            ThrowUtils.throwIf(!update, StatusCode.OPERATION_ERROR,"空间容量更新失败");
+        }
+        this.deleteObject(picture);
+        return true;
+    }
+
     /**
      * 根据nameRule命名：图片{序号}
+     *
      * @param list
      * @param nameRule
      */
-    public void fillPictureWithNameRule(List<Picture> list,String nameRule){
-        if(StrUtil.isBlank(nameRule)){
-            return ;
+    public void fillPictureWithNameRule(List<Picture> list, String nameRule) {
+        if (StrUtil.isBlank(nameRule)) {
+            return;
         }
-        int count=1;
-        try{
-            for(Picture item:list){
-                item.setName(nameRule.replace("{序号}",String.valueOf(count++)));
+        int count = 1;
+        try {
+            for (Picture item : list) {
+                item.setName(nameRule.replace("{序号}", String.valueOf(count++)));
             }
-        }catch (Exception e){
-            throw new BusinessException(StatusCode.OPERATION_ERROR,"名称解析错误");
+        } catch (Exception e) {
+            throw new BusinessException(StatusCode.OPERATION_ERROR, "名称解析错误");
         }
     }
 

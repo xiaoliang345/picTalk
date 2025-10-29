@@ -8,6 +8,7 @@ import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.oxn.aiPicturesStore.enums.SpaceLevelEnum;
+import com.oxn.aiPicturesStore.enums.SpaceRoleEnum;
 import com.oxn.aiPicturesStore.enums.SpaceTypeEnum;
 import com.oxn.aiPicturesStore.enums.StatusCode;
 import com.oxn.aiPicturesStore.exception.BusinessException;
@@ -17,6 +18,7 @@ import com.oxn.aiPicturesStore.model.dto.space.SpaceQueryRequest;
 import com.oxn.aiPicturesStore.model.dto.spaceuser.SpaceUserAddRequest;
 import com.oxn.aiPicturesStore.model.entity.Picture;
 import com.oxn.aiPicturesStore.model.entity.Space;
+import com.oxn.aiPicturesStore.model.entity.SpaceUser;
 import com.oxn.aiPicturesStore.model.entity.User;
 import com.oxn.aiPicturesStore.model.vo.PictureVO;
 import com.oxn.aiPicturesStore.model.vo.SpaceVO;
@@ -51,6 +53,9 @@ public class SpaceServiceImpl extends ServiceImpl<SpaceMapper, Space>
 
     @Resource
     private TransactionTemplate transactionTemplate;
+
+    @Autowired
+    private SpaceUserService spaceUserService;
 
     // 定义锁池（全局唯一，通常作为类的静态成员）
     private static final Map<Long, Object> LOCK_MAP = new ConcurrentHashMap<>();
@@ -93,6 +98,14 @@ public class SpaceServiceImpl extends ServiceImpl<SpaceMapper, Space>
                     ThrowUtils.throwIf(exists, StatusCode.OPERATION_ERROR, "不能创建多个个人空间");
                     boolean save = this.save(space);
                     ThrowUtils.throwIf(!save, StatusCode.OPERATION_ERROR, "创建失败");
+                    if(space.getSpaceType()==SpaceTypeEnum.TEAM.getValue()){
+                        SpaceUser spaceUser = new SpaceUser();
+                        spaceUser.setSpaceRole(SpaceRoleEnum.ADMIN.getValue());
+                        spaceUser.setSpaceId(space.getId());
+                        spaceUser.setUserId(userId);
+                        save = spaceUserService.save(spaceUser);
+                        ThrowUtils.throwIf(!save, StatusCode.OPERATION_ERROR, "添加空间成员失败");
+                    }
                     return space.getId();
                 });
                 return execute;

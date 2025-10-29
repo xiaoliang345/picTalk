@@ -23,6 +23,7 @@ import com.oxn.aiPicturesStore.service.SpaceUserService;
 import com.oxn.aiPicturesStore.mapper.SpaceUserMapper;
 import com.oxn.aiPicturesStore.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 
 import java.util.Collections;
@@ -41,6 +42,7 @@ public class SpaceUserServiceImpl extends ServiceImpl<SpaceUserMapper, SpaceUser
         implements SpaceUserService {
 
     @Autowired
+    @Lazy
     private SpaceService spaceService;
 
     @Autowired
@@ -110,6 +112,8 @@ public class SpaceUserServiceImpl extends ServiceImpl<SpaceUserMapper, SpaceUser
             User user = null;
             if (userMap.containsKey(userId)) {
                 user = userMap.get(userId).get(0);
+                Space space = spaceService.getById(spaceUserVO.getSpaceId());
+                spaceUserVO.setSpace(SpaceVO.objToVo(space));
                 spaceUserVO.setUser(userService.getUserVo(user));
             }
         });
