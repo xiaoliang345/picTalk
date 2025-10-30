@@ -31,6 +31,11 @@ public class Picture {
      */
     private String thumbnailUrl;
 
+    /**
+     * 预览图 url
+     */
+    private String previewUrl;
+
 
     /**
      * 图片名称

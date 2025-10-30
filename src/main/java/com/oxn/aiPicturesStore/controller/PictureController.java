@@ -39,9 +39,12 @@ import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.core.task.TaskExecutor;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.core.ValueOperations;
 import org.springframework.util.DigestUtils;
+import org.springframework.util.ObjectUtils;
+import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -50,6 +53,8 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
+import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -91,8 +96,6 @@ public class PictureController {
     private Executor taskExecutor;
 
 
-
-
     /**
      * 图片上传（文件）
      *
@@ -130,8 +133,8 @@ public class PictureController {
      * @return
      */
     @PostMapping("/upload/batch")
-    public BaseResponse<Integer> uploadPictureByUrl(@RequestBody PictureUploadByBatchRequest pictureUploadByBatchRequest,
-                                                    HttpServletRequest httpServletRequest) {
+    public BaseResponse<Integer> uploadPictureByBatch(@RequestBody PictureUploadByBatchRequest pictureUploadByBatchRequest,
+                                                      HttpServletRequest httpServletRequest) {
         ThrowUtils.throwIf(pictureUploadByBatchRequest == null, StatusCode.PARAMS_ERROR);
         User loginUser = userService.getLoginUser(httpServletRequest);
         Integer count = pictureService.uploadPictureByBatch(pictureUploadByBatchRequest, loginUser);
@@ -239,11 +242,11 @@ public class PictureController {
         pictureQueryRequest.setReviewStatus(PictureReviewStatusEnum.PASS.getValue());
         //如果spaceId为null，则查询所有图片，否则查询指定空间下的图片，需要当前用户是空间管理员或者空间成员
         Long spaceId = pictureQueryRequest.getSpaceId();
-        if( spaceId!=null){
+        if (spaceId != null) {
             Space space = spaceService.getById(spaceId);
-            ThrowUtils.throwIf(space==null,StatusCode.NOT_FOUND_ERROR);
+            ThrowUtils.throwIf(space == null, StatusCode.NOT_FOUND_ERROR);
             User loginUser = userService.getLoginUser(request);
-            spaceService.chechUserHasAuth(loginUser,space);
+            spaceService.chechUserHasAuth(loginUser, space);
         }
 
         // 查询数据库  
@@ -322,7 +325,7 @@ public class PictureController {
         ThrowUtils.throwIf(oldPicture == null, StatusCode.NOT_FOUND_ERROR);
         // 仅本人或管理员可编辑
         if (!oldPicture.getUserId().equals(loginUser.getId()) && !userService.isAdmin(loginUser)) {
-            throw new BusinessException(StatusCode.NO_AUTH_ERROR);
+            throw new BusinessException(StatusCode.NO_AUTH_ERROR, "只能修改自己上传的图片");
         }
         // 操作数据库
         boolean result = pictureService.updateById(picture);
@@ -360,7 +363,7 @@ public class PictureController {
     @PostMapping("/search/color")
     @AuthCheck(mustRole = UserConstant.USER_ROLE_ADMIN)
     public BaseResponse<List<PictureVO>> searchPictureByColor(@RequestBody SearchPictureByColorRequest searchPictureByColorRequest,
-                                                         HttpServletRequest request) {
+                                                              HttpServletRequest request) {
         ThrowUtils.throwIf(searchPictureByColorRequest == null, StatusCode.PARAMS_ERROR);
         User loginUser = userService.getLoginUser(request);
         Long spaceId = searchPictureByColorRequest.getSpaceId();
@@ -375,18 +378,38 @@ public class PictureController {
      */
     @PostMapping("/edit/batch")
     public BaseResponse<Boolean> editPictureByBatch(@RequestBody PictureEditByBatchRequest pictureEditByBatchRequest,
-                                                              HttpServletRequest request) {
+                                                    HttpServletRequest request) {
         ThrowUtils.throwIf(pictureEditByBatchRequest == null, StatusCode.PARAMS_ERROR);
         User loginUser = userService.getLoginUser(request);
-        pictureService.editPictureByBatch(pictureEditByBatchRequest,loginUser);
+        pictureService.editPictureByBatch(pictureEditByBatchRequest, loginUser);
         return ResultUtils.success(true);
     }
 
     /**
-     * 使用 AI 创建图片（异步）
+     * 使用 AI 编辑图片（异步）
      */
-    @PostMapping("/ai/create")
-    public BaseResponse<String> createAiPicture(@RequestBody PictureUpdateByAIRequest pictureUpdateByAIRequest) {
+    @PostMapping("/ai/edit")
+    public BaseResponse<String> AiEditPicture(@RequestBody PictureUpdateByAIRequest pictureUpdateByAIRequest,
+                                              HttpServletRequest request) {
+        // 使用已注入的stringRedisTemplate而不是创建新的RedisTemplate实例
+        ValueOperations<String, String> valueOperations = stringRedisTemplate.opsForValue();
+        String taskCountStr = valueOperations.get("task_count");
+        long taskCount = 0;
+
+        if (StringUtils.isEmpty(taskCountStr)) {
+            LocalDateTime now = LocalDateTime.now();
+            LocalDateTime endOfDay = now.toLocalDate().atTime(23, 59, 59);
+            long between = ChronoUnit.SECONDS.between(now, endOfDay);
+            valueOperations.set("task_count", "1", between, TimeUnit.SECONDS);
+        } else {
+            taskCount = Long.parseLong(taskCountStr);
+            if (taskCount >= 7) {
+                return new BaseResponse<>(StatusCode.OPERATION_ERROR.getCode(), null, "任务数量已达上限");
+            }
+            taskCount++;
+            valueOperations.set("task_count", String.valueOf(taskCount));
+        }
+
         if (pictureUpdateByAIRequest == null || pictureUpdateByAIRequest.getId() <= 0) {
             throw new BusinessException(StatusCode.PARAMS_ERROR);
         }
@@ -399,6 +422,7 @@ public class PictureController {
         if (picture == null) {
             throw new BusinessException(StatusCode.OPERATION_ERROR, "图片不存在");
         }
+        User loginUser = userService.getLoginUser(request);
 
         // 1. 创建任务，返回任务 ID
         String taskId = aiTaskManager.createTask(description);
@@ -408,7 +432,7 @@ public class PictureController {
             try {
                 aiTaskManager.updateTask(taskId, TaskStatus.PROCESSING, null, null);
                 // 调用 AI 服务生成新图片
-                String newImageUrl = pictureService.pictureUpdateByAI(description, picture);
+                String newImageUrl = pictureService.pictureEditByAI(pictureUpdateByAIRequest, picture, loginUser);
                 aiTaskManager.updateTask(taskId, TaskStatus.SUCCESS, newImageUrl, null);
             } catch (Exception e) {
                 aiTaskManager.updateTask(taskId, TaskStatus.FAILED, null, e.getMessage());
@@ -431,7 +455,6 @@ public class PictureController {
         if (taskResult == null) {
             throw new BusinessException(StatusCode.OPERATION_ERROR, "任务不存在或已过期");
         }
-
         return ResultUtils.success(taskResult);
     }
 }

@@ -108,6 +108,7 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
         Picture picture = new Picture();
         picture.setUrl(uploadPictureResult.getUrl());
         picture.setThumbnailUrl(uploadPictureResult.getThumbnailUrl());
+        picture.setPreviewUrl(uploadPictureResult.getPreviewUrl());
         //如果指定了文件名前缀则使用，没有的话就使用从URL中解析的名称
         if (StrUtil.isNotBlank(pictureUploadRequest.getPicName())) {
             picture.setName(pictureUploadRequest.getPicName());
@@ -139,7 +140,7 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
             if (spaceId != null) {
                 boolean update = spaceService.lambdaUpdate()
                         .eq(Space::getId, spaceId)
-                        .setSql("totalCount=totalCount+" +1)
+                        .setSql("totalCount=totalCount+" + 1)
                         .setSql("totalSize=totalSize+" + picture.getPicSize())
                         .update();
                 ThrowUtils.throwIf(!update, StatusCode.OPERATION_ERROR, "空间信息更新失败");
@@ -442,8 +443,17 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
     }
 
     @Override
-    public String pictureUpdateByAI(String description, Picture picture) {
+    public String pictureEditByAI(PictureUpdateByAIRequest pictureUpdateByAIRequest, Picture picture, User loginUser) {
+        //String newPictureUrl = "https://www.codefather.cn/logo.png";
+        String description = pictureUpdateByAIRequest.getDescription();
         String newPictureUrl = imageEditService.editImage(picture.getUrl(), description);
+        PictureUploadRequest pictureUploadRequest = new PictureUploadRequest();
+        pictureUploadRequest.setId(pictureUpdateByAIRequest.getId());
+        Long spaceId = picture.getSpaceId();
+        if (ObjUtil.isNotEmpty(spaceId)) {
+            pictureUploadRequest.setSpaceId(picture.getId());
+        }
+        this.uploadPicture(newPictureUrl, pictureUploadRequest, loginUser);
         return newPictureUrl;
     }
 
@@ -452,7 +462,7 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
         ThrowUtils.throwIf(picture == null, StatusCode.NOT_FOUND_ERROR);
         // 仅管理员可删除
         if (!userService.isAdmin(loginUser)) {
-            throw new BusinessException(StatusCode.NO_AUTH_ERROR);
+            throw new BusinessException(StatusCode.NO_AUTH_ERROR, "只能删除自己上传的图片");
         }
         // 操作数据库
         boolean result = this.removeById(picture.getId());
@@ -464,7 +474,7 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
                     .setSql("totalCount=totalCount-" + 1)
                     .setSql("totalSize=totalSize-" + picture.getPicSize())
                     .update();
-            ThrowUtils.throwIf(!update, StatusCode.OPERATION_ERROR,"空间容量更新失败");
+            ThrowUtils.throwIf(!update, StatusCode.OPERATION_ERROR, "空间容量更新失败");
         }
         this.deleteObject(picture);
         return true;

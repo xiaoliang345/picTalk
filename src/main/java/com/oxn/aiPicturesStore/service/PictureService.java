@@ -109,11 +109,11 @@ public interface PictureService extends IService<Picture> {
 
     /**
      * 根据描述生成新图片
-     * @param description
+     * @param pictureUpdateByAIRequest
      * @param picture
-     * @return
+     * @param loginUser
      */
-    String pictureUpdateByAI(String description,Picture picture);
+    String pictureEditByAI(PictureUpdateByAIRequest pictureUpdateByAIRequest, Picture picture,User loginUser);
 
     /**
      * 删除图片

@@ -1,5 +1,6 @@
 package com.oxn.aiPicturesStore.manager.upload;
 
+import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.io.FileUtil;
 import cn.hutool.core.util.NumberUtil;
 import cn.hutool.core.util.RandomUtil;
@@ -8,11 +9,16 @@ import com.oxn.aiPicturesStore.enums.StatusCode;
 import com.oxn.aiPicturesStore.exception.BusinessException;
 import com.oxn.aiPicturesStore.manager.CosManager;
 import com.oxn.aiPicturesStore.model.dto.file.UploadPictureResult;
+import com.oxn.aiPicturesStore.model.dto.picture.PicttureBuildResult;
+import com.qcloud.cos.COSClient;
+import com.qcloud.cos.model.ObjectMetadata;
 import com.qcloud.cos.model.PutObjectResult;
 import com.qcloud.cos.model.ciModel.persistence.CIObject;
 import com.qcloud.cos.model.ciModel.persistence.ImageInfo;
 import com.qcloud.cos.model.ciModel.persistence.ProcessResults;
 import lombok.extern.slf4j.Slf4j;
+import org.checkerframework.checker.units.qual.C;
+import org.springframework.beans.BeanUtils;
 
 import javax.annotation.Resource;
 import java.io.File;
@@ -27,6 +33,9 @@ public abstract class PictureUploadTemplate {
 
     @Resource
     private CosManager cosManager;
+
+    @Resource
+    private COSClient cosClient;
 
     /**
      * 上传图片
@@ -55,14 +64,37 @@ public abstract class PictureUploadTemplate {
             ProcessResults processResults = putObjectResult.getCiUploadResult().getProcessResults();
             List<CIObject> objectList = processResults.getObjectList();
             //获取压缩图、缩略图
-            CIObject ciObject = null;
+            CIObject preObject = null;
             CIObject thumbnaiObject = null;
             if (!objectList.isEmpty()) {
-                ciObject = objectList.get(0);
+                preObject = objectList.get(0);
                 if (1 < objectList.size())
                     thumbnaiObject = objectList.get(1);
             }
-            return buildResult(imageInfo, originalFilename, file, ciObject, thumbnaiObject);
+            //原始图片key
+            String originalFilekey = putObjectResult.getCiUploadResult().getOriginalInfo().getKey();
+
+            PicttureBuildResult picttureBuildResult = new PicttureBuildResult();
+            //整理返回参数
+            int width = imageInfo.getWidth();
+            int height = imageInfo.getHeight();
+            double picScale = NumberUtil.round((double) width / height, 2).doubleValue();
+            //没有缩略图则用预览图
+            if (thumbnaiObject != null && thumbnaiObject.getKey() != null)
+                picttureBuildResult.setThumbnailUrl(cosClientConfig.getHost() + "/" + thumbnaiObject.getKey());
+            else {
+                picttureBuildResult.setThumbnailUrl(cosClientConfig.getHost() + "/" + preObject.getKey());
+            }
+            picttureBuildResult.setUrl(cosClientConfig.getHost() + "/" + originalFilekey);
+            picttureBuildResult.setPreviewUrl(cosClientConfig.getHost() + "/" + preObject.getKey());
+            picttureBuildResult.setPicName(FileUtil.mainName(originalFilename));
+            picttureBuildResult.setPicSize(FileUtil.size(file));
+            picttureBuildResult.setPicWidth(width);
+            picttureBuildResult.setPicHeight(height);
+            picttureBuildResult.setPicScale(picScale);
+            picttureBuildResult.setPicFormat(fileType);
+            picttureBuildResult.setPicColor(imageInfo.getAve());
+            return buildResult(picttureBuildResult);
         } catch (Exception e) {
             log.error("file upload error, filepath = " + filePath, e);
             throw new BusinessException(StatusCode.SYSTEM_ERROR, "上传失败");
@@ -74,32 +106,15 @@ public abstract class PictureUploadTemplate {
     /**
      * 封装返回对象
      *
-     * @param imageInfo
-     * @param originalFilename
-     * @param file
+     * @param picttureBuildResult
      * @return
      */
-    private UploadPictureResult buildResult(ImageInfo imageInfo, String originalFilename, File file, CIObject ciObject, CIObject thumbnaiObject) {
-        //获取宽高和宽高比
-        int width = imageInfo.getWidth();
-        int height = imageInfo.getHeight();
-        double picScale = NumberUtil.round((double) width / height, 2).doubleValue();
+    private UploadPictureResult buildResult( PicttureBuildResult picttureBuildResult) {
+
+
         //封装返回结果
         UploadPictureResult uploadPictureResult = new UploadPictureResult();
-        //没有缩略图则用压缩图
-        if (thumbnaiObject != null && thumbnaiObject.getKey() != null)
-            uploadPictureResult.setThumbnailUrl(cosClientConfig.getHost() + "/" + thumbnaiObject.getKey());
-        else {
-            uploadPictureResult.setThumbnailUrl(cosClientConfig.getHost() + "/" + ciObject.getKey());
-        }
-        uploadPictureResult.setUrl(cosClientConfig.getHost() + "/" + ciObject.getKey());
-        uploadPictureResult.setPicName(FileUtil.mainName(originalFilename));
-        uploadPictureResult.setPicSize(FileUtil.size(file));
-        uploadPictureResult.setPicWidth(width);
-        uploadPictureResult.setPicHeight(height);
-        uploadPictureResult.setPicScale(picScale);
-        uploadPictureResult.setPicFormat(imageInfo.getFormat());
-        uploadPictureResult.setPicColor(imageInfo.getAve());
+        BeanUtils.copyProperties(picttureBuildResult, uploadPictureResult);
         return uploadPictureResult;
     }
 
