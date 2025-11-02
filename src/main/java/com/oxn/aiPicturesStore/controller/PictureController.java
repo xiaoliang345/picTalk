@@ -80,9 +80,6 @@ public class PictureController {
     @Autowired
     private StringRedisTemplate stringRedisTemplate;
 
-    @Autowired
-    private AiTaskManager aiTaskManager;
-
     //LOCAL_CACHE配置
     private final Cache<String, String> LOCAL_CACHE =
             Caffeine.newBuilder().initialCapacity(1024)
@@ -92,8 +89,7 @@ public class PictureController {
                     .build();
 
     @Autowired
-    @Qualifier("taskExecutor")
-    private Executor taskExecutor;
+    private AiTaskManager aiTaskManager;
 
 
     /**
@@ -391,25 +387,7 @@ public class PictureController {
     @PostMapping("/ai/edit")
     public BaseResponse<String> AiEditPicture(@RequestBody PictureUpdateByAIRequest pictureUpdateByAIRequest,
                                               HttpServletRequest request) {
-        // 使用已注入的stringRedisTemplate而不是创建新的RedisTemplate实例
-        ValueOperations<String, String> valueOperations = stringRedisTemplate.opsForValue();
-        String taskCountStr = valueOperations.get("task_count");
-        long taskCount = 0;
-
-        if (StringUtils.isEmpty(taskCountStr)) {
-            LocalDateTime now = LocalDateTime.now();
-            LocalDateTime endOfDay = now.toLocalDate().atTime(23, 59, 59);
-            long between = ChronoUnit.SECONDS.between(now, endOfDay);
-            valueOperations.set("task_count", "1", between, TimeUnit.SECONDS);
-        } else {
-            taskCount = Long.parseLong(taskCountStr);
-            if (taskCount >= 7) {
-                return new BaseResponse<>(StatusCode.OPERATION_ERROR.getCode(), null, "任务数量已达上限");
-            }
-            taskCount++;
-            valueOperations.set("task_count", String.valueOf(taskCount));
-        }
-
+        ThrowUtils.throwIf(pictureUpdateByAIRequest == null, StatusCode.PARAMS_ERROR);
         if (pictureUpdateByAIRequest == null || pictureUpdateByAIRequest.getId() <= 0) {
             throw new BusinessException(StatusCode.PARAMS_ERROR);
         }
@@ -424,21 +402,26 @@ public class PictureController {
         }
         User loginUser = userService.getLoginUser(request);
 
-        // 1. 创建任务，返回任务 ID
-        String taskId = aiTaskManager.createTask(description);
+        ValueOperations<String, String> valueOperations = stringRedisTemplate.opsForValue();
+        String taskCountStr = valueOperations.get("task_count");
+        long taskCount = 0;
 
-        // 2. 提交异步任务处理（使用线程池）
-        CompletableFuture.runAsync(() -> {
-            try {
-                aiTaskManager.updateTask(taskId, TaskStatus.PROCESSING, null, null);
-                // 调用 AI 服务生成新图片
-                String newImageUrl = pictureService.pictureEditByAI(pictureUpdateByAIRequest, picture, loginUser);
-                aiTaskManager.updateTask(taskId, TaskStatus.SUCCESS, newImageUrl, null);
-            } catch (Exception e) {
-                aiTaskManager.updateTask(taskId, TaskStatus.FAILED, null, e.getMessage());
+        if (StringUtils.isEmpty(taskCountStr)) {
+            LocalDateTime now = LocalDateTime.now();
+            LocalDateTime endOfDay = now.toLocalDate().atTime(23, 59, 59);
+            long between = ChronoUnit.SECONDS.between(now, endOfDay);
+            valueOperations.set("task_count", "1", between, TimeUnit.SECONDS);
+            taskCount = 1;
+        } else {
+            taskCount = Long.parseLong(taskCountStr);
+            if (taskCount >= 7) {
+                return new BaseResponse<>(StatusCode.OPERATION_ERROR.getCode(), null, "任务数量已达上限");
             }
-        }, taskExecutor); // 使用自定义线程池，不要用默认的
-
+            taskCount++;
+            valueOperations.set("task_count", String.valueOf(taskCount));
+        }
+        String taskId = aiTaskManager.createTask(description);
+        pictureService.AiEditPicture(pictureUpdateByAIRequest, picture, loginUser,taskId);
         return ResultUtils.success(taskId);
     }
 

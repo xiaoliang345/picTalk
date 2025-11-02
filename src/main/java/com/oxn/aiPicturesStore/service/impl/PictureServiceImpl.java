@@ -8,11 +8,14 @@ import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.baomidou.mybatisplus.extension.conditions.update.LambdaUpdateChainWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.oxn.aiPicturesStore.common.BaseResponse;
 import com.oxn.aiPicturesStore.constant.PictureConstant;
 import com.oxn.aiPicturesStore.enums.PictureReviewStatusEnum;
 import com.oxn.aiPicturesStore.enums.StatusCode;
+import com.oxn.aiPicturesStore.enums.TaskStatus;
 import com.oxn.aiPicturesStore.exception.BusinessException;
 import com.oxn.aiPicturesStore.exception.ThrowUtils;
+import com.oxn.aiPicturesStore.manager.AiTaskManager;
 import com.oxn.aiPicturesStore.manager.CosManager;
 import com.oxn.aiPicturesStore.manager.FileManager;
 import com.oxn.aiPicturesStore.manager.ImageEditService;
@@ -38,14 +41,22 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.data.redis.core.ValueOperations;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionTemplate;
+import org.springframework.util.StringUtils;
 
 import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 /**
@@ -77,6 +88,13 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
 
     @Autowired
     private TransactionTemplate transactionTemplate;
+
+    @Autowired
+    private AiTaskManager aiTaskManager;
+
+    @Autowired
+    @Qualifier("taskExecutor")
+    private Executor taskExecutor;
 
     @Override
     public PictureVO uploadPicture(Object inputSource, PictureUploadRequest pictureUploadRequest, User loginUser) {
@@ -479,6 +497,24 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
         this.deleteObject(picture);
         return true;
     }
+
+    @Override
+    public void AiEditPicture(PictureUpdateByAIRequest pictureUpdateByAIRequest, Picture picture, User loginUser,String taskId) {
+
+
+        // 2. 提交异步任务处理（使用线程池）
+        CompletableFuture.runAsync(() -> {
+            try {
+                aiTaskManager.updateTask(taskId, TaskStatus.PROCESSING, null, null);
+                // 调用 AI 服务生成新图片
+                String newImageUrl = this.pictureEditByAI(pictureUpdateByAIRequest, picture, loginUser);
+                aiTaskManager.updateTask(taskId, TaskStatus.SUCCESS, newImageUrl, null);
+            } catch (Exception e) {
+                aiTaskManager.updateTask(taskId, TaskStatus.FAILED, null, e.getMessage());
+            }
+        }, taskExecutor); // 使用自定义线程池，不要用默认的
+    }
+
 
     /**
      * 根据nameRule命名：图片{序号}

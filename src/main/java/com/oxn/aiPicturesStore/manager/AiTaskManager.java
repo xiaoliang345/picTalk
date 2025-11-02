@@ -5,22 +5,21 @@ import com.oxn.aiPicturesStore.model.dto.picture.AiImageTaskResult;
 import org.springframework.stereotype.Component;
 
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicInteger;
 
 // AiTaskManager.java
 @Component
 public class AiTaskManager {
 
     private final Map<String, AiImageTaskResult> taskMap = new ConcurrentHashMap<>();
-    private final AtomicInteger counter = new AtomicInteger(0);
 
     public AiImageTaskResult getTask(String taskId) {
         return taskMap.get(taskId);
     }
 
     public String createTask(String description) {
-        String taskId = "ai_img_" + counter.incrementAndGet();
+        String taskId = "ai_img_" + UUID.randomUUID().toString().replace("-", "");
         AiImageTaskResult result = new AiImageTaskResult();
         result.setTaskId(taskId);
         result.setStatus(TaskStatus.PENDING);

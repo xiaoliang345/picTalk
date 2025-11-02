@@ -1,9 +1,13 @@
 package com.oxn.aiPicturesStore.controller;
 
 import cn.hutool.core.util.ObjectUtil;
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.oxn.aiPicturesStore.annotation.AuthSpaceUserCheck;
 import com.oxn.aiPicturesStore.common.BaseResponse;
 import com.oxn.aiPicturesStore.common.DeleteRequest;
 import com.oxn.aiPicturesStore.common.ResultUtils;
+import com.oxn.aiPicturesStore.constant.SpaceUserConstant;
+import com.oxn.aiPicturesStore.enums.SpaceRoleEnum;
 import com.oxn.aiPicturesStore.enums.StatusCode;
 import com.oxn.aiPicturesStore.exception.BusinessException;
 import com.oxn.aiPicturesStore.exception.ThrowUtils;
@@ -41,9 +45,11 @@ public class SpaceUserController {
      * 添加成员到空间
      */
     @PostMapping("/add")
+    @AuthSpaceUserCheck(mustRole = SpaceUserConstant.SPACE_USER_ADMIN)
     public BaseResponse<Long> addSpaceUser(@RequestBody SpaceUserAddRequest spaceUserAddRequest, HttpServletRequest request) {
         ThrowUtils.throwIf(spaceUserAddRequest == null, StatusCode.PARAMS_ERROR);
-        long id = spaceUserService.addSpaceUser(spaceUserAddRequest);
+        User loginUser = userService.getLoginUser(request);
+        long id = spaceUserService.addSpaceUser(spaceUserAddRequest,loginUser);
         return ResultUtils.success(id);
     }
 
@@ -51,6 +57,7 @@ public class SpaceUserController {
      * 从空间移除成员
      */
     @PostMapping("/delete")
+    @AuthSpaceUserCheck(mustRole = SpaceUserConstant.SPACE_USER_ADMIN)
     public BaseResponse<Boolean> deleteSpaceUser(@RequestBody DeleteRequest deleteRequest,
                                                  HttpServletRequest request) {
         if (deleteRequest == null || deleteRequest.getId() <= 0) {
@@ -70,6 +77,7 @@ public class SpaceUserController {
      * 查询某个成员在某个空间的信息
      */
     @PostMapping("/get")
+    @AuthSpaceUserCheck(mustRole = SpaceUserConstant.SPACE_USER_ADMIN)
     public BaseResponse<SpaceUser> getSpaceUser(@RequestBody SpaceUserQueryRequest spaceUserQueryRequest) {
         // 参数校验
         ThrowUtils.throwIf(spaceUserQueryRequest == null, StatusCode.PARAMS_ERROR);
@@ -86,9 +94,11 @@ public class SpaceUserController {
      * 查询成员信息列表
      */
     @PostMapping("/list")
+    @AuthSpaceUserCheck(mustRole = SpaceUserConstant.SPACE_USER_ADMIN)
     public BaseResponse<List<SpaceUserVO>> listSpaceUser(@RequestBody SpaceUserQueryRequest spaceUserQueryRequest,
                                                          HttpServletRequest request) {
         ThrowUtils.throwIf(spaceUserQueryRequest == null, StatusCode.PARAMS_ERROR);
+
         List<SpaceUser> spaceUserList = spaceUserService.list(
                 spaceUserService.getQueryWrapper(spaceUserQueryRequest)
         );
@@ -99,16 +109,18 @@ public class SpaceUserController {
      * 编辑成员信息（设置权限）
      */
     @PostMapping("/edit")
+    @AuthSpaceUserCheck(mustRole = SpaceUserConstant.SPACE_USER_ADMIN)
     public BaseResponse<Boolean> editSpaceUser(@RequestBody SpaceUserEditRequest spaceUserEditRequest,
                                                HttpServletRequest request) {
         if (spaceUserEditRequest == null || spaceUserEditRequest.getId() <= 0) {
             throw new BusinessException(StatusCode.PARAMS_ERROR);
         }
+        User loginUser = userService.getLoginUser(request);
         // 将实体类和 DTO 进行转换
         SpaceUser spaceUser = new SpaceUser();
         BeanUtils.copyProperties(spaceUserEditRequest, spaceUser);
         // 数据校验
-        spaceUserService.validSpaceUser(spaceUser, false);
+        spaceUserService.validSpaceUser(spaceUser, false,loginUser);
         // 判断是否存在
         long id = spaceUserEditRequest.getId();
         SpaceUser oldSpaceUser = spaceUserService.getById(id);
