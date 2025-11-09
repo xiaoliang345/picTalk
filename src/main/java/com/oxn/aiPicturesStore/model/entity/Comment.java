@@ -7,30 +7,41 @@ import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 @Data
-@TableName("post")
-public class Post {
+@TableName("comment")
+public class Comment {
     @TableId(type = IdType.AUTO)
     private Long id;
+    
+    @TableField("post_id")
+    private Long postId;
+    
+    @TableField("user_id")
     private Long userId;
-    private String title;
+    
+    @TableField("parent_id")
+    private Long parentId = 0L; // 0 表示根评论
+    
+    @TableField("reply_to_user_id")
+    private Long replyToUserId;
+    
     private String content;
+    
     @TableField("create_time")
     private LocalDateTime createTime;
-    @TableField("update_time")
-    private LocalDateTime updateTime;
     
     @TableField("like_count")
     private Integer likeCount = 0;
 
-    
-    // 非数据库字段，用于返回用户信息
     @TableField(exist = false)
-    private String userName;
-    
+    private String username; // 评论人用户名（用于展示）
+
     @TableField(exist = false)
-    private String userAvatar;
+    private String replyToUsername; // 被回复人用户名
+
+    @TableField(exist = false)
+    private List<Comment> children = new ArrayList<>(); // 子评论（递归）
 }

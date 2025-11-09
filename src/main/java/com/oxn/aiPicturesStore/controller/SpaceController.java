@@ -15,6 +15,9 @@ import com.oxn.aiPicturesStore.enums.SpaceLevelEnum;
 import com.oxn.aiPicturesStore.enums.StatusCode;
 import com.oxn.aiPicturesStore.exception.BusinessException;
 import com.oxn.aiPicturesStore.exception.ThrowUtils;
+import com.oxn.aiPicturesStore.manager.auth.SpaceUserAuthManager;
+import com.oxn.aiPicturesStore.manager.auth.annotation.SaSpaceCheckPermission;
+import com.oxn.aiPicturesStore.manager.auth.model.SpaceUserPermissionConstant;
 import com.oxn.aiPicturesStore.model.dto.space.*;
 import com.oxn.aiPicturesStore.model.entity.Space;
 import com.oxn.aiPicturesStore.model.entity.User;
@@ -50,6 +53,9 @@ public class SpaceController {
     @Autowired
     private UserService userService;
 
+    @Autowired
+    private SpaceUserAuthManager spaceUserAuthManager;
+
     /**
      * 创建空间
      *
@@ -80,7 +86,7 @@ public class SpaceController {
         Space oldSpace = spaceService.getById(id);
         ThrowUtils.throwIf(oldSpace == null, StatusCode.NOT_FOUND_ERROR);
         // 仅本人或管理员可删除  
-        spaceService.chechUserHasAuth(loginUser,oldSpace);
+        //spaceService.chechUserHasAuth(loginUser,oldSpace);
         // 操作数据库  
         boolean result = spaceService.removeById(id);
         ThrowUtils.throwIf(!result, StatusCode.OPERATION_ERROR);
@@ -137,8 +143,11 @@ public class SpaceController {
         // 查询数据库  
         Space space = spaceService.getById(id);
         ThrowUtils.throwIf(space == null, StatusCode.NOT_FOUND_ERROR);
-        // 获取封装类  
-        return ResultUtils.success(spaceService.getSpaceVO(space, request));
+        SpaceVO spaceVO = spaceService.getSpaceVO(space, request);
+        User loginUser = userService.getLoginUser(request);
+        List<String> permissionList = spaceUserAuthManager.getPermissionList(space, loginUser);
+        spaceVO.setPermissionList(permissionList);
+        return ResultUtils.success(spaceVO);
     }
 
     /**
@@ -188,18 +197,10 @@ public class SpaceController {
         BeanUtils.copyProperties(spaceEditRequest, space);
         // 设置编辑时间  
         space.setEditTime(new Date());
-        spaceService.fillSpaceBySpaceLevel(space);
-        // 数据校验  
-        spaceService.validSpace(space, false);
-        User loginUser = userService.getLoginUser(request);
         // 判断是否存在  
         long id = spaceEditRequest.getId();
         Space oldSpace = spaceService.getById(id);
         ThrowUtils.throwIf(oldSpace == null, StatusCode.NOT_FOUND_ERROR);
-        // 仅本人或管理员可编辑  
-        if (!oldSpace.getUserId().equals(loginUser.getId()) && !userService.isAdmin(loginUser)) {
-            throw new BusinessException(StatusCode.NO_AUTH_ERROR);
-        }
         // 操作数据库  
         boolean result = spaceService.updateById(space);
         ThrowUtils.throwIf(!result, StatusCode.OPERATION_ERROR);
@@ -208,6 +209,7 @@ public class SpaceController {
 
     /**
      * 获取空间类型信息
+     *
      * @return
      */
     @GetMapping("/list/level")

@@ -7,30 +7,18 @@ import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
 
 import java.time.LocalDateTime;
-import java.util.List;
-import java.util.Map;
 
 @Data
-@TableName("post")
-public class Post {
+@TableName("user_like")
+public class UserLike {
     @TableId(type = IdType.AUTO)
     private Long id;
+    @TableField("user_id")
     private Long userId;
-    private String title;
-    private String content;
+    @TableField("target_id")
+    private Long targetId;
+    @TableField("target_type")
+    private Integer targetType; // 1: post, 2: comment
     @TableField("create_time")
     private LocalDateTime createTime;
-    @TableField("update_time")
-    private LocalDateTime updateTime;
-    
-    @TableField("like_count")
-    private Integer likeCount = 0;
-
-    
-    // 非数据库字段，用于返回用户信息
-    @TableField(exist = false)
-    private String userName;
-    
-    @TableField(exist = false)
-    private String userAvatar;
 }

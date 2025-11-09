@@ -64,7 +64,7 @@ public class ImageEditService {
 
         // 构建最终请求体
         JSONObject requestBody = JSONUtil.createObj()
-                .set("model", "qwen-image-edit")
+                .set("model", "qwen-image-edit-plus")
                 .set("input", inputObj)
                 .set("parameters", parametersObj);
 

@@ -4,6 +4,7 @@ import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.util.ObjUtil;
 import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.baomidou.mybatisplus.extension.conditions.update.LambdaUpdateChainWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
@@ -46,6 +47,7 @@ import org.springframework.data.redis.core.ValueOperations;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.util.StringUtils;
+import org.springframework.web.multipart.MultipartFile;
 
 import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
@@ -212,6 +214,7 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
             // spaceId 为空（null 或 empty）：只查 spaceId 为 NULL 的记录
             queryWrapper.isNull("spaceId");
         }
+
         queryWrapper.like(StrUtil.isNotBlank(name), "name", name);
         queryWrapper.like(StrUtil.isNotBlank(introduction), "introduction", introduction);
         queryWrapper.like(StrUtil.isNotBlank(picFormat), "picFormat", picFormat);
@@ -478,10 +481,6 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
     @Override
     public Boolean deletePicture(Picture picture, User loginUser) {
         ThrowUtils.throwIf(picture == null, StatusCode.NOT_FOUND_ERROR);
-        // 仅管理员可删除
-        if (!userService.isAdmin(loginUser)) {
-            throw new BusinessException(StatusCode.NO_AUTH_ERROR, "只能删除自己上传的图片");
-        }
         // 操作数据库
         boolean result = this.removeById(picture.getId());
         ThrowUtils.throwIf(!result, StatusCode.OPERATION_ERROR);
@@ -513,6 +512,17 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
                 aiTaskManager.updateTask(taskId, TaskStatus.FAILED, null, e.getMessage());
             }
         }, taskExecutor); // 使用自定义线程池，不要用默认的
+    }
+
+    @Override
+    public Boolean uploadAvatar(MultipartFile multipartFile, User loginUser) {
+        PictureUploadTemplate uploadTemplate = filePictureUpload;
+        UploadPictureResult uploadPictureResult = uploadTemplate.uploadPicture(multipartFile, "avatar");
+        LambdaUpdateWrapper<User> lambdaUpdateWrapper = new LambdaUpdateWrapper<>();
+        lambdaUpdateWrapper.eq(User::getId, loginUser.getId())
+                .set(User::getUserAvatar, uploadPictureResult.getUrl());
+        boolean update = userService.update(lambdaUpdateWrapper);
+        return update;
     }
 
 
