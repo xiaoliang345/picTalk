@@ -473,11 +473,11 @@ public class PictureController {
      * 头像上传
      */
     @PostMapping("/upload/avatar")
-    public BaseResponse<Boolean> uploadAvatar(@RequestPart("file") MultipartFile multipartFile,
+    public BaseResponse<String> uploadAvatar(@RequestPart("file") MultipartFile multipartFile,
                                               HttpServletRequest request) {
         ThrowUtils.throwIf(multipartFile == null, StatusCode.PARAMS_ERROR);
         User loginUser = userService.getLoginUser(request);
-        Boolean f = pictureService.uploadAvatar(multipartFile, loginUser);
-        return ResultUtils.success(f);
+        String avatar = pictureService.uploadAvatar(multipartFile, loginUser);
+        return ResultUtils.success(avatar);
     }
 }

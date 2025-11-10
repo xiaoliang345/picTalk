@@ -1,16 +1,38 @@
 spring:
   application: aiPicturesStore
   profiles:
-    active: local
-  datasource:
-    driver-class-name: com.mysql.cj.jdbc.Driver
-    url: jdbc:mysql://localhost:3306/ai_pictures_store
-    username: root
-    password: 123456
-#    url: jdbc:mysql://113.44.60.157:3306/ai_pictures_store123
-#    username: ai_pictures_store123
-#    password: ai_pictures_store123456
-  # Redis 配置
+    active: @spring.profiles.active@
+  autoconfigure:
+    exclude: org.apache.shardingsphere.spring.boot.ShardingSphereAutoConfiguration
+
+  # 空间图片分表
+#  shardingsphere:
+#    datasource:
+#      names: ai_pictures_store
+#      ai_pictures_store:
+#        type: com.zaxxer.hikari.HikariDataSource
+#        driver-class-name: com.mysql.cj.jdbc.Driver
+#        url: jdbc:mysql://localhost:3306/ai_pictures_store
+#        username: root
+#        password: 123456
+#    rules:
+#      sharding:
+#        tables:
+#          picture:
+#            actual-data-nodes: ai_pictures_store  # 动态分表
+#            table-strategy:
+#              standard:
+#                sharding-column: spaceId
+#                sharding-algorithm-name: picture_sharding_algorithm  # 使用自定义分片算法
+#        sharding-algorithms:
+#          picture_sharding_algorithm:
+#            type: CLASS_BASED
+#            props:
+#              strategy: standard
+#              algorithmClassName: com.oxn.aiPicturesStore.manager.sharding.PictureShardingAlgorithm
+    props:
+      sql-show: true
+
   redis:
     database: 0
     host: 127.0.0.1
@@ -22,6 +44,14 @@ spring:
   session:
     store-type: redis
     timeout: 1800
+
+  #允许跨域的地址
+  cors:
+    allowed-origin-patterns:
+      - http://8.162.3.140
+      - http://www.oxncloud.top
+      - http://localhost:*
+      - http://127.0.0.1:*
 
 server:
   port: 8123
@@ -46,7 +76,7 @@ knife4j:
     version: 1.0
     group:
       default:
-#        group-name: 默认分组
+        #        group-name: 默认分组
         api-rule: package
         api-rule-resources:
           - com.oxn.aiPicturesStore.controller

@@ -4,10 +4,12 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.oxn.aiPicturesStore.common.PageRequest;
+import com.oxn.aiPicturesStore.model.dto.post.PostQueryRequest;
 import com.oxn.aiPicturesStore.model.entity.Picture;
 import com.oxn.aiPicturesStore.model.entity.Post;
 import com.oxn.aiPicturesStore.model.vo.PostVO;
 
+import javax.servlet.http.HttpServletRequest;
 import java.util.List;
 import java.util.Map;
 
@@ -54,15 +56,15 @@ public interface PostService extends IService<Post> {
      * @param userId  用户ID
      * @param postId  帖子ID
      */
-    void likePost(Long userId, Long postId);
+    Boolean likePost(Long userId, Long postId);
 
     /**
      * 分页获取帖子列表
      *
-     * @param pageRequest 分页参数
+     * @param postQueryRequest 分页参数
      * @return 帖子分页列表
      */
-    IPage<PostVO> listPostsByPage(PageRequest pageRequest);
+    IPage<PostVO> listPostsByPage(PostQueryRequest postQueryRequest, HttpServletRequest request);
 
     /**
      * 删除帖子及其关联的评论和图片

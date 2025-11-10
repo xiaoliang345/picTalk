@@ -136,7 +136,7 @@ public interface PictureService extends IService<Picture> {
      * @param loginUser
      * @return
      */
-    Boolean uploadAvatar(MultipartFile multipartFile, User loginUser);
+    String uploadAvatar(MultipartFile multipartFile, User loginUser);
 
 
 }

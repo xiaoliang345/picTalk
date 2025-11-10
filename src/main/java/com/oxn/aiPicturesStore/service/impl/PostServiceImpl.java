@@ -1,16 +1,20 @@
 package com.oxn.aiPicturesStore.service.impl;
 
+import cn.hutool.core.util.ObjUtil;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.oxn.aiPicturesStore.common.PageRequest;
+import com.oxn.aiPicturesStore.enums.StatusCode;
+import com.oxn.aiPicturesStore.exception.BusinessException;
 import com.oxn.aiPicturesStore.mapper.CommentMapper;
 import com.oxn.aiPicturesStore.mapper.PostImageMapper;
 import com.oxn.aiPicturesStore.mapper.PostMapper;
 import com.oxn.aiPicturesStore.mapper.UserLikeMapper;
 import com.oxn.aiPicturesStore.mapper.UserMapper;
+import com.oxn.aiPicturesStore.model.dto.post.PostQueryRequest;
 import com.oxn.aiPicturesStore.model.entity.Comment;
 import com.oxn.aiPicturesStore.model.entity.Post;
 import com.oxn.aiPicturesStore.model.entity.PostImage;
@@ -27,6 +31,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import javax.servlet.http.HttpServletRequest;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -237,7 +242,7 @@ public class PostServiceImpl extends ServiceImpl<PostMapper, Post>  implements P
         }
     }
 
-    public void likePost(Long userId, Long postId) {
+    public Boolean likePost(Long userId, Long postId) {
         // 检查是否已点赞
         long count = userLikeMapper.selectCount(
                 new QueryWrapper<UserLike>()
@@ -245,7 +250,7 @@ public class PostServiceImpl extends ServiceImpl<PostMapper, Post>  implements P
                         .eq("target_id", postId)
                         .eq("target_type", 1)
         );
-        if (count > 0) return; // 已点赞，不重复操作
+        if (count > 0) throw new BusinessException(StatusCode.OPERATION_ERROR, "请勿重复点赞"); // 已点赞，不重复操作
 
         UserLike like = new UserLike();
         like.setUserId(userId);
@@ -256,10 +261,11 @@ public class PostServiceImpl extends ServiceImpl<PostMapper, Post>  implements P
         postMapper.update(null,
                 new UpdateWrapper<Post>().setSql("like_count = like_count + 1").eq("id", postId)
         );
+        return true;
     }
 
     @Override
-    public IPage<PostVO> listPostsByPage(PageRequest pageRequest) {
+    public IPage<PostVO> listPostsByPage(PostQueryRequest pageRequest, HttpServletRequest request) {
         // 创建分页对象
         Page<Post> page = new Page<>(pageRequest.getCurrent(), pageRequest.getPageSize());
 
@@ -277,6 +283,20 @@ public class PostServiceImpl extends ServiceImpl<PostMapper, Post>  implements P
             // 默认按创建时间倒序排列
             queryWrapper.orderByDesc("create_time");
         }
+        // 根据用户ID查询
+        Long userId = pageRequest.getUserId();
+        if(ObjUtil.isNotEmpty(userId)){
+            User user = userService.getById(userId);
+            if(user==null){
+                throw new BusinessException(StatusCode.OPERATION_ERROR,"用户不存在");
+            }
+            User loginUser = userService.getLoginUser(request);
+            if(!loginUser.getId().equals(userId)&&!userService.isAdmin(loginUser)){
+                throw new BusinessException(StatusCode.NO_AUTH_ERROR);
+            }
+            queryWrapper.eq("userId", userId);
+        }
+
 
         // 执行分页查询
         IPage<Post> postPage = postMapper.selectPage(page, queryWrapper);

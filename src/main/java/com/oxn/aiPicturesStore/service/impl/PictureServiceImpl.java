@@ -107,14 +107,17 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
             pictureId = pictureUploadRequest.getId();
         }
         // 如果是更新图片，需要校验图片是否存在
+        Picture oldPicture;
         if (pictureId != null) {
-            Picture oldPicture = this.getById(pictureId);
+            oldPicture = this.getById(pictureId);
             if (oldPicture == null)
                 throw new BusinessException(StatusCode.NOT_FOUND_ERROR, "图片不存在");
             //仅本人或管理员可以修改图片
             if (!oldPicture.getUserId().equals(loginUser.getId()) && !userService.isAdmin(loginUser)) {
                 throw new BusinessException(StatusCode.NO_AUTH_ERROR);
             }
+        } else {
+            oldPicture = null;
         }
         // 按照用户 id 划分目录
         String uploadPathPrefix = String.format("public/%s", loginUser.getId());
@@ -158,11 +161,16 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
             boolean result = this.saveOrUpdate(picture);
             ThrowUtils.throwIf(!result, StatusCode.OPERATION_ERROR, "图片上传失败");
             if (spaceId != null) {
-                boolean update = spaceService.lambdaUpdate()
+                //判断是新增还是更新空间图片
+                LambdaUpdateChainWrapper<Space> updateChainWrapper = spaceService.lambdaUpdate()
                         .eq(Space::getId, spaceId)
                         .setSql("totalCount=totalCount+" + 1)
-                        .setSql("totalSize=totalSize+" + picture.getPicSize())
-                        .update();
+                        .setSql("totalSize=totalSize+" + picture.getPicSize());
+                if(oldPicture!=null){
+                    updateChainWrapper.setSql("totalCount=totalCount-" + 1)
+                            .setSql("totalSize=totalSize-" + oldPicture.getPicSize());
+                }
+                boolean update = updateChainWrapper.update();
                 ThrowUtils.throwIf(!update, StatusCode.OPERATION_ERROR, "空间信息更新失败");
             }
             return status;
@@ -324,7 +332,12 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
             picture.setReviewStatus(PictureReviewStatusEnum.PASS.getValue());
             picture.setReviewerId(loginUser.getId());
         } else {
-            picture.setReviewStatus(PictureReviewStatusEnum.REVIEWING.getValue());
+            //空间图片自动过审
+            if (ObjUtil.isNotEmpty(picture.getSpaceId())) {
+                picture.setReviewStatus(PictureReviewStatusEnum.PASS.getValue());
+            } else {
+                picture.setReviewStatus(PictureReviewStatusEnum.REVIEWING.getValue());
+            }
         }
     }
 
@@ -498,7 +511,7 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
     }
 
     @Override
-    public void AiEditPicture(PictureUpdateByAIRequest pictureUpdateByAIRequest, Picture picture, User loginUser,String taskId) {
+    public void AiEditPicture(PictureUpdateByAIRequest pictureUpdateByAIRequest, Picture picture, User loginUser, String taskId) {
 
 
         // 2. 提交异步任务处理（使用线程池）
@@ -515,14 +528,14 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
     }
 
     @Override
-    public Boolean uploadAvatar(MultipartFile multipartFile, User loginUser) {
+    public String uploadAvatar(MultipartFile multipartFile, User loginUser) {
         PictureUploadTemplate uploadTemplate = filePictureUpload;
         UploadPictureResult uploadPictureResult = uploadTemplate.uploadPicture(multipartFile, "avatar");
         LambdaUpdateWrapper<User> lambdaUpdateWrapper = new LambdaUpdateWrapper<>();
         lambdaUpdateWrapper.eq(User::getId, loginUser.getId())
-                .set(User::getUserAvatar, uploadPictureResult.getUrl());
-        boolean update = userService.update(lambdaUpdateWrapper);
-        return update;
+                .set(User::getUserAvatar, uploadPictureResult.getThumbnailUrl());
+        userService.update(lambdaUpdateWrapper);
+        return uploadPictureResult.getThumbnailUrl();
     }
 
 

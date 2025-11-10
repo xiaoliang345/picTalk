@@ -8,6 +8,7 @@ import com.oxn.aiPicturesStore.common.ResultUtils;
 import com.oxn.aiPicturesStore.enums.StatusCode;
 import com.oxn.aiPicturesStore.exception.BusinessException;
 import com.oxn.aiPicturesStore.exception.ThrowUtils;
+import com.oxn.aiPicturesStore.model.dto.post.PostQueryRequest;
 import com.oxn.aiPicturesStore.model.entity.Comment;
 import com.oxn.aiPicturesStore.model.entity.Post;
 import com.oxn.aiPicturesStore.model.entity.User;
@@ -69,9 +70,9 @@ public class ForumController {
     @PostMapping("/post/{id}/like")
     public BaseResponse<Boolean> likePost(@PathVariable Long id, HttpServletRequest request) {
         User loginUser = userService.getLoginUser(request);
-        Long userId = loginUser.getId(); // 从 token/session 获取
-        postService.likePost(userId, id);
-        return ResultUtils.success(true);
+        Long userId = loginUser.getId();
+        Boolean b = postService.likePost(userId, id);
+        return ResultUtils.success(b);
     }
 
     @PostMapping("/comment")
@@ -103,17 +104,14 @@ public class ForumController {
     /**
      * 分页获取帖子列表
      *
-     * @param pageRequest 分页参数
+     * @param postQueryRequest 分页参数
      * @param request     HTTP请求
      * @return 帖子分页列表
      */
     @GetMapping("/posts")
-    public BaseResponse<IPage<PostVO>> listPostsByPage(PageRequest pageRequest, HttpServletRequest request) {
-        // 用户身份验证
-        userService.getLoginUser(request);
-
+    public BaseResponse<IPage<PostVO>> listPostsByPage(PostQueryRequest postQueryRequest, HttpServletRequest request) {
         // 获取帖子分页列表
-        IPage<PostVO> postPage = postService.listPostsByPage(pageRequest);
+        IPage<PostVO> postPage = postService.listPostsByPage(postQueryRequest,request);
         return ResultUtils.success(postPage);
     }
 
@@ -128,10 +126,6 @@ public class ForumController {
         ThrowUtils.throwIf(multipartFile.isEmpty(), StatusCode.PARAMS_ERROR, "请选择图片");
         return ResultUtils.success(postImageService.uploadPicture(multipartFile, postId));
     }
-    /*public BaseResponse<Boolean> uploadPicture(@RequestParam("files") List<MultipartFile> multipartFiles, Long postId) {
-        ThrowUtils.throwIf(multipartFiles.isEmpty(), StatusCode.PARAMS_ERROR, "请选择图片");
-        return ResultUtils.success(postImageService.uploadPicture(multipartFiles, postId));
-    }*/
 
     /**
      * 更新帖子

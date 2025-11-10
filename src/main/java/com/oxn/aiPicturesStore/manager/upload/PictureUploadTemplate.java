@@ -38,6 +38,11 @@ public abstract class PictureUploadTemplate {
     private COSClient cosClient;
 
     /**
+     * 图片访问前缀
+     */
+    private static final String IMAGE_ACCESS_PREFIX = "http://www.oxncloud.top/cos";
+
+    /**
      * 上传图片
      *
      * @param inputSource
@@ -81,12 +86,12 @@ public abstract class PictureUploadTemplate {
             double picScale = NumberUtil.round((double) width / height, 2).doubleValue();
             //没有缩略图则用预览图
             if (thumbnaiObject != null && thumbnaiObject.getKey() != null)
-                picttureBuildResult.setThumbnailUrl(cosClientConfig.getHost() + "/" + thumbnaiObject.getKey());
+                picttureBuildResult.setThumbnailUrl(IMAGE_ACCESS_PREFIX + "/" + thumbnaiObject.getKey());
             else {
-                picttureBuildResult.setThumbnailUrl(cosClientConfig.getHost() + "/" + preObject.getKey());
+                picttureBuildResult.setThumbnailUrl(IMAGE_ACCESS_PREFIX + "/" + preObject.getKey());
             }
-            picttureBuildResult.setUrl(cosClientConfig.getHost() + "/" + originalFilekey);
-            picttureBuildResult.setPreviewUrl(cosClientConfig.getHost() + "/" + preObject.getKey());
+            picttureBuildResult.setUrl(IMAGE_ACCESS_PREFIX + "/" + originalFilekey);
+            picttureBuildResult.setPreviewUrl(IMAGE_ACCESS_PREFIX + "/" + preObject.getKey());
             picttureBuildResult.setPicName(FileUtil.mainName(originalFilename));
             picttureBuildResult.setPicSize(FileUtil.size(file));
             picttureBuildResult.setPicWidth(width);
