@@ -73,4 +73,13 @@ public interface PostService extends IService<Post> {
      * @param userId 用户ID
      */
     void deletePost(Long postId, Long userId);
+    
+    /**
+     * 设置帖子置顶状态
+     * 
+     * @param postId 帖子ID
+     * @param isTop  是否置顶 0-不置顶 1-置顶
+     * @return 是否设置成功
+     */
+    Boolean setTop(Long postId, Integer isTop);
 }

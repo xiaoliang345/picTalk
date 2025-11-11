@@ -170,4 +170,24 @@ public class ForumController {
         postService.deletePost(postId, userId);
         return ResultUtils.success(true);
     }
+    
+    /**
+     * 设置帖子置顶状态
+     *
+     * @param postId 帖子ID
+     * @param isTop  是否置顶 0-不置顶 1-置顶
+     * @param request HTTP请求
+     * @return 是否设置成功
+     */
+    @PostMapping("/post/top/{postId}")
+    public BaseResponse<Boolean> setTop(@PathVariable Long postId, @RequestParam Integer isTop, HttpServletRequest request) {
+        User loginUser = userService.getLoginUser(request);
+        // 检查是否是管理员
+        if (!userService.isAdmin(loginUser)) {
+            throw new BusinessException(StatusCode.NO_AUTH_ERROR, "无权限操作");
+        }
+        
+        Boolean result = postService.setTop(postId, isTop);
+        return ResultUtils.success(result);
+    }
 }

@@ -26,6 +26,9 @@ public class PostVO implements Serializable {
 
     @TableField("like_count")
     private Integer likeCount = 0;
+    
+    @TableField("is_top")
+    private Integer isTop = 0;
 
     @TableField(exist = false)
     private List<Map<String, String>> imageUrls; // 非数据库字段，用于返回图片列表

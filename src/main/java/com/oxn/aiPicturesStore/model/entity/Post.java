@@ -25,6 +25,12 @@ public class Post {
     
     @TableField("like_count")
     private Integer likeCount = 0;
+    
+    /**
+     * 是否置顶 0-不置顶 1-置顶
+     */
+    @TableField("is_top")
+    private Integer isTop = 0;
 
     
     // 非数据库字段，用于返回用户信息

@@ -280,7 +280,8 @@ public class PostServiceImpl extends ServiceImpl<PostMapper, Post>  implements P
                 queryWrapper.orderByDesc(pageRequest.getSortField());
             }
         } else {
-            // 默认按创建时间倒序排列
+            // 默认按创建时间倒序排列，置顶帖优先
+            queryWrapper.orderByDesc("is_top");
             queryWrapper.orderByDesc("create_time");
         }
         // 根据用户ID查询
@@ -296,6 +297,8 @@ public class PostServiceImpl extends ServiceImpl<PostMapper, Post>  implements P
             }
             queryWrapper.eq("userId", userId);
         }
+
+        queryWrapper.like(pageRequest.getSearchText() != null, "title", pageRequest.getSearchText());
 
 
         // 执行分页查询
@@ -465,5 +468,16 @@ public class PostServiceImpl extends ServiceImpl<PostMapper, Post>  implements P
 
         // 删除帖子
         postMapper.deleteById(postId);
+    }
+    
+    @Override
+    public Boolean setTop(Long postId, Integer isTop) {
+        Post post = postMapper.selectById(postId);
+        if (post == null) {
+            throw new BusinessException(StatusCode.NOT_FOUND_ERROR, "帖子不存在");
+        }
+        
+        post.setIsTop(isTop);
+        return postMapper.updateById(post) > 0;
     }
 }
