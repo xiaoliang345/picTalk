@@ -488,12 +488,18 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
 
     @Override
     public String pictureEditByAI(PictureUpdateByAIRequest pictureUpdateByAIRequest, Picture picture, User loginUser) {
-        String newPictureUrl = "https://www.codefather.cn/logo.png";
-        /*String description = pictureUpdateByAIRequest.getDescription();
+        //睡眠三秒
+        /*try {
+            Thread.sleep(3000);
+        }catch (Exception e){
+            e.printStackTrace();
+        }
+        String newPictureUrl = "https://www.codefather.cn/logo.png";*/
+        String description = pictureUpdateByAIRequest.getDescription();
         //将服务器转发的图片地址转换为存储桶的图片地址
         String url = picture.getUrl().replace(ImageAccessPrefix,cosClientConfig.getHost());
         String newPictureUrl = imageEditService.editImage(url, description);
-        PictureUploadRequest pictureUploadRequest = new PictureUploadRequest();
+        /*PictureUploadRequest pictureUploadRequest = new PictureUploadRequest();
         pictureUploadRequest.setId(pictureUpdateByAIRequest.getId());
         Long spaceId = picture.getSpaceId();
         if (ObjUtil.isNotEmpty(spaceId)) {

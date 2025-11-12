@@ -4,6 +4,7 @@ import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.util.ObjUtil;
 import cn.hutool.core.util.StrUtil;
 import cn.hutool.http.server.HttpServerRequest;
+import java.util.regex.Pattern;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.oxn.aiPicturesStore.constant.UserConstant;
@@ -55,6 +56,9 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
         if (userAccount.length() < 4) {
             throw new BusinessException(StatusCode.PARAMS_ERROR, "账号过短");
         }
+        if (containsChinese(userAccount)) {
+            throw new BusinessException(StatusCode.PARAMS_ERROR, "账号不能包含中文字符");
+        }
         if (userPassword.length() < 8) {
             throw new BusinessException(StatusCode.PARAMS_ERROR, "密码过短");
         }
@@ -95,6 +99,9 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
         }
         if (userAccount.length() < 4) {
             throw new BusinessException(StatusCode.PARAMS_ERROR, "账号过短");
+        }
+        if (containsChinese(userAccount)) {
+            throw new BusinessException(StatusCode.PARAMS_ERROR, "账号不能包含中文字符");
         }
         if (userPassword.length() < 8) {
             throw new BusinessException(StatusCode.PARAMS_ERROR, "密码过短");
@@ -255,7 +262,20 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
         return UserConstant.USER_ROLE_ADMIN.equals(user.getUserRole());
     }
 
-
+    /**
+     * 检查字符串是否包含中文字符
+     *
+     * @param str 待检查的字符串
+     * @return true 如果包含中文字符，否则返回 false
+     */
+    private boolean containsChinese(String str) {
+        if (str == null || str.isEmpty()) {
+            return false;
+        }
+        // 使用正则表达式匹配中文字符（包括基本汉字和扩展A区）
+        Pattern pattern = Pattern.compile("[\u4e00-\u9fa5]");
+        return pattern.matcher(str).find();
+    }
 }
 
 

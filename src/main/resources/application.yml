@@ -2,37 +2,6 @@ spring:
   application: aiPicturesStore
   profiles:
     active: @spring.profiles.active@
-  autoconfigure:
-    exclude: org.apache.shardingsphere.spring.boot.ShardingSphereAutoConfiguration
-
-  # 空间图片分表
-#  shardingsphere:
-#    datasource:
-#      names: ai_pictures_store
-#      ai_pictures_store:
-#        type: com.zaxxer.hikari.HikariDataSource
-#        driver-class-name: com.mysql.cj.jdbc.Driver
-#        url: jdbc:mysql://localhost:3306/ai_pictures_store
-#        username: root
-#        password: 123456
-#    rules:
-#      sharding:
-#        tables:
-#          picture:
-#            actual-data-nodes: ai_pictures_store.picture  # 动态分表
-#            table-strategy:
-#              standard:
-#                sharding-column: spaceId
-#                sharding-algorithm-name: picture_sharding_algorithm  # 使用自定义分片算法
-#        sharding-algorithms:
-#          picture_sharding_algorithm:
-#            type: CLASS_BASED
-#            props:
-#              strategy: standard
-#              algorithmClassName: com.oxn.aiPicturesStore.manager.sharding.PictureShardingAlgorithm
-    props:
-      sql-show: true
-
   redis:
     database: 0
     host: 127.0.0.1
