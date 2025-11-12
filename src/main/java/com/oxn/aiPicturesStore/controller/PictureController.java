@@ -229,12 +229,12 @@ public class PictureController {
         }
 
         // 4. 获取当前用户权限列表（用于前端展示）
-        User loginUser = userService.getLoginUser(request);
-        List<String> permissionList = spaceUserAuthManager.getPermissionList(space, loginUser);
+        //User loginUser = userService.getLoginUser(request);
+        //List<String> permissionList = spaceUserAuthManager.getPermissionList(space, loginUser);
 
         // 5. 构建返回 VO
         PictureVO pictureVO = pictureService.getPictureVO(picture, request);
-        pictureVO.setPermissionList(permissionList);
+        //pictureVO.setPermissionList(permissionList);
 
         return ResultUtils.success(pictureVO);
     }
@@ -343,12 +343,15 @@ public class PictureController {
         // 数据校验
         pictureService.validPicture(picture);
         User loginUser = userService.getLoginUser(request);
-        //补充审核参数
-        pictureService.fillReviewParams(picture, loginUser);
         // 判断是否存在
         long id = pictureEditRequest.getId();
         Picture oldPicture = pictureService.getById(id);
         ThrowUtils.throwIf(oldPicture == null, StatusCode.NOT_FOUND_ERROR);
+        if(!ObjectUtils.isEmpty(oldPicture.getSpaceId())){
+            picture.setSpaceId(oldPicture.getSpaceId());
+        }
+        //补充审核参数
+        pictureService.fillReviewParams(picture, loginUser);
         // 操作数据库
         boolean result = pictureService.updateById(picture);
         ThrowUtils.throwIf(!result, StatusCode.OPERATION_ERROR);

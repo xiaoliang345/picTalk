@@ -122,7 +122,8 @@ public class ForumController {
      * @return 图片上传结果列表
      */
     @PostMapping("/upload")
-    public BaseResponse<Map<String, String>> uploadPicture(@RequestParam("file") MultipartFile multipartFile, Long postId) {
+    public BaseResponse<Map<String, String>> uploadPicture(@RequestParam("file") MultipartFile multipartFile, Long postId,HttpServletRequest request) {
+        userService.getLoginUser(request);
         ThrowUtils.throwIf(multipartFile.isEmpty(), StatusCode.PARAMS_ERROR, "请选择图片");
         return ResultUtils.success(postImageService.uploadPicture(multipartFile, postId));
     }

@@ -26,6 +26,16 @@ public class ImageEditService {
     private String apiUrl;
 
     /**
+     * 验证图片URL是否有效
+     *
+     * @param imageUrl 图片URL
+     * @return 是否有效
+     */
+    private boolean isValidImageUrl(String imageUrl) {
+        return imageUrl != null && (imageUrl.startsWith("http://") || imageUrl.startsWith("https://"));
+    }
+
+    /**
      * 使用通义千问 Image Edit 模型编辑图片
      *
      * @param originalImageUrl 原始图片的公网可访问 URL
@@ -40,6 +50,11 @@ public class ImageEditService {
         }
         if (StrUtil.isBlank(editInstructions)) {
             throw new IllegalArgumentException("编辑指令不能为空");
+        }
+
+        // 验证图片URL格式
+        if (!isValidImageUrl(originalImageUrl)) {
+            throw new IllegalArgumentException("无效的图片URL格式，请确保使用正确的HTTP或HTTPS图片链接");
         }
 
         // 构建 content 数组
@@ -64,7 +79,7 @@ public class ImageEditService {
 
         // 构建最终请求体
         JSONObject requestBody = JSONUtil.createObj()
-                .set("model", "qwen-image-edit-plus")
+                .set("model", "qwen-image-edit")
                 .set("input", inputObj)
                 .set("parameters", parametersObj);
 
@@ -105,11 +120,23 @@ public class ImageEditService {
                         throw new RuntimeException("API 返回中未找到 choices 数据");
                     }
                 } else {
+                    // 检查是否有具体的错误信息
+                    if (jsonResponse.containsKey("code") && jsonResponse.containsKey("message")) {
+                        String errorCode = jsonResponse.getStr("code");
+                        String errorMessage = jsonResponse.getStr("message");
+                        if ("InvalidParameter".equals(errorCode) && errorMessage.contains("download image failed")) {
+                            throw new RuntimeException("图片编辑失败：无法下载原始图片，请确保图片URL可公开访问且有效。错误详情：" + errorMessage);
+                        }
+                        throw new RuntimeException("API 错误，代码：" + errorCode + "，消息：" + errorMessage);
+                    }
                     throw new RuntimeException("API 响应中缺少 'output' 字段，响应: " + response.body());
                 }
             } else {
                 throw new RuntimeException("API 请求失败，状态码: " + response.getStatus() + "，响应: " + response.body());
             }
+        } catch (RuntimeException e) {
+            // 直接重新抛出运行时异常，避免包装
+            throw e;
         } catch (Exception e) {
             log.error("调用通义千问图片编辑服务时发生异常", e);
             throw new RuntimeException("图片编辑请求失败: " + e.getMessage(), e);

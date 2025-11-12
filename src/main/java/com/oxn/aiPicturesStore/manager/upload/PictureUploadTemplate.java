@@ -19,6 +19,7 @@ import com.qcloud.cos.model.ciModel.persistence.ProcessResults;
 import lombok.extern.slf4j.Slf4j;
 import org.checkerframework.checker.units.qual.C;
 import org.springframework.beans.BeanUtils;
+import org.springframework.beans.factory.annotation.Value;
 
 import javax.annotation.Resource;
 import java.io.File;
@@ -40,7 +41,8 @@ public abstract class PictureUploadTemplate {
     /**
      * 图片访问前缀
      */
-    private static final String IMAGE_ACCESS_PREFIX = "http://www.oxncloud.top/cos";
+    @Value("${nginx.proxyUrl}")
+    private String ImageAccessPrefix;
 
     /**
      * 上传图片
@@ -86,12 +88,12 @@ public abstract class PictureUploadTemplate {
             double picScale = NumberUtil.round((double) width / height, 2).doubleValue();
             //没有缩略图则用预览图
             if (thumbnaiObject != null && thumbnaiObject.getKey() != null)
-                picttureBuildResult.setThumbnailUrl(IMAGE_ACCESS_PREFIX + "/" + thumbnaiObject.getKey());
+                picttureBuildResult.setThumbnailUrl(ImageAccessPrefix + "/" + thumbnaiObject.getKey());
             else {
-                picttureBuildResult.setThumbnailUrl(IMAGE_ACCESS_PREFIX + "/" + preObject.getKey());
+                picttureBuildResult.setThumbnailUrl(ImageAccessPrefix + "/" + preObject.getKey());
             }
-            picttureBuildResult.setUrl(IMAGE_ACCESS_PREFIX + "/" + originalFilekey);
-            picttureBuildResult.setPreviewUrl(IMAGE_ACCESS_PREFIX + "/" + preObject.getKey());
+            picttureBuildResult.setUrl(ImageAccessPrefix + "/" + originalFilekey);
+            picttureBuildResult.setPreviewUrl(ImageAccessPrefix + "/" + preObject.getKey());
             picttureBuildResult.setPicName(FileUtil.mainName(originalFilename));
             picttureBuildResult.setPicSize(FileUtil.size(file));
             picttureBuildResult.setPicWidth(width);

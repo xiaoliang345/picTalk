@@ -19,7 +19,7 @@ spring:
 #      sharding:
 #        tables:
 #          picture:
-#            actual-data-nodes: ai_pictures_store  # 动态分表
+#            actual-data-nodes: ai_pictures_store.picture  # 动态分表
 #            table-strategy:
 #              standard:
 #                sharding-column: spaceId
@@ -85,3 +85,7 @@ knife4j:
 dashscope:
   apiKey: sk-3d14e742252746e6aba673324b64b41d # 替换为你的DashScope API Key
   apiUrl: https://dashscope.aliyuncs.com/api/v1/services/aigc/multimodal-generation/generation
+
+# 图片访问前缀配置
+nginx:
+  proxyUrl: http://www.oxncloud.top/cos

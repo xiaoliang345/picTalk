@@ -10,6 +10,7 @@ import com.baomidou.mybatisplus.extension.conditions.update.LambdaUpdateChainWra
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.oxn.aiPicturesStore.common.BaseResponse;
+import com.oxn.aiPicturesStore.config.CosClientConfig;
 import com.oxn.aiPicturesStore.constant.PictureConstant;
 import com.oxn.aiPicturesStore.enums.PictureReviewStatusEnum;
 import com.oxn.aiPicturesStore.enums.StatusCode;
@@ -43,12 +44,14 @@ import org.jsoup.select.Elements;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.ValueOperations;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
 
+import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
 import java.net.MalformedURLException;
@@ -97,6 +100,13 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
     @Autowired
     @Qualifier("taskExecutor")
     private Executor taskExecutor;
+
+    @Value("${nginx.proxyUrl}")
+    private String ImageAccessPrefix;
+
+    @Resource
+    private CosClientConfig cosClientConfig;
+
 
     @Override
     public PictureVO uploadPicture(Object inputSource, PictureUploadRequest pictureUploadRequest, User loginUser) {
@@ -478,16 +488,18 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
 
     @Override
     public String pictureEditByAI(PictureUpdateByAIRequest pictureUpdateByAIRequest, Picture picture, User loginUser) {
-        //String newPictureUrl = "https://www.codefather.cn/logo.png";
-        String description = pictureUpdateByAIRequest.getDescription();
-        String newPictureUrl = imageEditService.editImage(picture.getUrl(), description);
+        String newPictureUrl = "https://www.codefather.cn/logo.png";
+        /*String description = pictureUpdateByAIRequest.getDescription();
+        //将服务器转发的图片地址转换为存储桶的图片地址
+        String url = picture.getUrl().replace(ImageAccessPrefix,cosClientConfig.getHost());
+        String newPictureUrl = imageEditService.editImage(url, description);
         PictureUploadRequest pictureUploadRequest = new PictureUploadRequest();
         pictureUploadRequest.setId(pictureUpdateByAIRequest.getId());
         Long spaceId = picture.getSpaceId();
         if (ObjUtil.isNotEmpty(spaceId)) {
             pictureUploadRequest.setSpaceId(picture.getId());
         }
-        this.uploadPicture(newPictureUrl, pictureUploadRequest, loginUser);
+        this.uploadPicture(newPictureUrl, pictureUploadRequest, loginUser);*/
         return newPictureUrl;
     }
 
