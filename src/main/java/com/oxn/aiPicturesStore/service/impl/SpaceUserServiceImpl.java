@@ -4,6 +4,7 @@ import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.util.ObjUtil;
 import cn.hutool.core.util.StrUtil;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.oxn.aiPicturesStore.enums.SpaceRoleEnum;
@@ -49,11 +50,11 @@ public class SpaceUserServiceImpl extends ServiceImpl<SpaceUserMapper, SpaceUser
     private UserService userService;
 
     @Override
-    public long addSpaceUser(SpaceUserAddRequest spaceUserAddRequest) {
+    public long addSpaceUser(SpaceUserAddRequest spaceUserAddRequest, User loginUser) {
         SpaceUser spaceUser = new SpaceUser();
         BeanUtil.copyProperties(spaceUserAddRequest, spaceUser);
         //参数校验
-        validSpaceUser(spaceUser, true);
+        validSpaceUser(spaceUser, true, loginUser);
         Long spaceId = spaceUser.getSpaceId();
         Long userId = spaceUser.getUserId();
         User user = userService.getById(userId);
@@ -121,7 +122,7 @@ public class SpaceUserServiceImpl extends ServiceImpl<SpaceUserMapper, SpaceUser
     }
 
     @Override
-    public void validSpaceUser(SpaceUser spaceUser, Boolean add) {
+    public void validSpaceUser(SpaceUser spaceUser, Boolean add,User loginUser) {
         Long id = spaceUser.getId();
         String spaceRole = spaceUser.getSpaceRole();
         Long spaceId = spaceUser.getSpaceId();
@@ -142,6 +143,7 @@ public class SpaceUserServiceImpl extends ServiceImpl<SpaceUserMapper, SpaceUser
         if (userId == null || userId <= 0) {
             throw new BusinessException(StatusCode.PARAMS_ERROR, "用户id不能为空");
         }
+
     }
 }
 

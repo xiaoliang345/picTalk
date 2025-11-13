@@ -66,9 +66,10 @@ public class CosManager {
         picOperations.setIsPicInfo(1);
         List<PicOperations.Rule> rules = new ArrayList<>();
         // 图片压缩（转成 webp 格式）
-        String webpKey = fileName.split("\\.")[0] + ".webp";
         PicOperations.Rule compressRule = new PicOperations.Rule();
-        compressRule.setRule("imageMogr2/format/webp");
+        String webpKey = fileName.split("\\.")[0] + ".webp";
+        //compressRule.setRule("imageMogr2/format/webp");
+        compressRule.setRule("imageMogr2/quality/50");
         compressRule.setBucket(cosClientConfig.getBucket());
         compressRule.setFileId(webpKey);
         rules.add(compressRule);
@@ -93,7 +94,7 @@ public class CosManager {
      * @throws CosClientException
      * @throws CosServiceException
      */
-    public void deleteObject(String key){
+    public void deleteObject(String key) {
         cosClient.deleteObject(cosClientConfig.getBucket(), key);
     }
 

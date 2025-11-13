@@ -1,10 +1,12 @@
 package com.oxn.aiPicturesStore.service;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.oxn.aiPicturesStore.mapper.SpaceUserMapper;
 import com.oxn.aiPicturesStore.model.dto.spaceuser.SpaceUserAddRequest;
 import com.oxn.aiPicturesStore.model.dto.spaceuser.SpaceUserQueryRequest;
 import com.oxn.aiPicturesStore.model.entity.SpaceUser;
 import com.baomidou.mybatisplus.extension.service.IService;
+import com.oxn.aiPicturesStore.model.entity.User;
 import com.oxn.aiPicturesStore.model.vo.SpaceUserVO;
 
 import java.util.List;
@@ -21,7 +23,7 @@ public interface SpaceUserService extends IService<SpaceUser> {
      * @param spaceUserAddRequest
      * @return
      */
-    long addSpaceUser(SpaceUserAddRequest spaceUserAddRequest);
+    long addSpaceUser(SpaceUserAddRequest spaceUserAddRequest, User loginUser);
 
     /**
      * 获取查询条件
@@ -50,5 +52,5 @@ public interface SpaceUserService extends IService<SpaceUser> {
      * @param spaceUser
      * @param add
      */
-    void validSpaceUser(SpaceUser spaceUser,Boolean add);
+    void validSpaceUser(SpaceUser spaceUser, Boolean add, User loginUser);
 }

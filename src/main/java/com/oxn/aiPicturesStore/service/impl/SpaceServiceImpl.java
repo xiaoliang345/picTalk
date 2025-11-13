@@ -95,7 +95,7 @@ public class SpaceServiceImpl extends ServiceImpl<SpaceMapper, Space>
                             .eq(Space::getUserId, userId)
                             .eq(Space::getSpaceType,space.getSpaceType())
                             .exists();
-                    ThrowUtils.throwIf(exists, StatusCode.OPERATION_ERROR, "不能创建多个个人空间");
+                    ThrowUtils.throwIf(exists, StatusCode.OPERATION_ERROR, "不能创建多个个人/团队空间");
                     boolean save = this.save(space);
                     ThrowUtils.throwIf(!save, StatusCode.OPERATION_ERROR, "创建失败");
                     if(space.getSpaceType()==SpaceTypeEnum.TEAM.getValue()){

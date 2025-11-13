@@ -19,6 +19,7 @@ import com.qcloud.cos.model.ciModel.persistence.ProcessResults;
 import lombok.extern.slf4j.Slf4j;
 import org.checkerframework.checker.units.qual.C;
 import org.springframework.beans.BeanUtils;
+import org.springframework.beans.factory.annotation.Value;
 
 import javax.annotation.Resource;
 import java.io.File;
@@ -36,6 +37,12 @@ public abstract class PictureUploadTemplate {
 
     @Resource
     private COSClient cosClient;
+
+    /**
+     * 图片访问前缀
+     */
+    @Value("${nginx.proxyUrl}")
+    private String ImageAccessPrefix;
 
     /**
      * 上传图片
@@ -81,12 +88,12 @@ public abstract class PictureUploadTemplate {
             double picScale = NumberUtil.round((double) width / height, 2).doubleValue();
             //没有缩略图则用预览图
             if (thumbnaiObject != null && thumbnaiObject.getKey() != null)
-                picttureBuildResult.setThumbnailUrl(cosClientConfig.getHost() + "/" + thumbnaiObject.getKey());
+                picttureBuildResult.setThumbnailUrl(ImageAccessPrefix + "/" + thumbnaiObject.getKey());
             else {
-                picttureBuildResult.setThumbnailUrl(cosClientConfig.getHost() + "/" + preObject.getKey());
+                picttureBuildResult.setThumbnailUrl(ImageAccessPrefix + "/" + preObject.getKey());
             }
-            picttureBuildResult.setUrl(cosClientConfig.getHost() + "/" + originalFilekey);
-            picttureBuildResult.setPreviewUrl(cosClientConfig.getHost() + "/" + preObject.getKey());
+            picttureBuildResult.setUrl(ImageAccessPrefix + "/" + originalFilekey);
+            picttureBuildResult.setPreviewUrl(ImageAccessPrefix + "/" + preObject.getKey());
             picttureBuildResult.setPicName(FileUtil.mainName(originalFilename));
             picttureBuildResult.setPicSize(FileUtil.size(file));
             picttureBuildResult.setPicWidth(width);

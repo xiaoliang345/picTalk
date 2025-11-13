@@ -1,24 +1,26 @@
 spring:
   application: aiPicturesStore
   profiles:
-    active: local
-  datasource:
-    driver-class-name: com.mysql.cj.jdbc.Driver
-    url: jdbc:mysql://localhost:3306/ai_pictures_store
-    username: root
-    password: 123456
-  # Redis 配置
+    active: @spring.profiles.active@
   redis:
-    database: 1
+    database: 0
     host: 127.0.0.1
     port: 6379
     timeout: 5000
   servlet:
     multipart:
-      max-file-size: 4MB
+      max-file-size: 2MB
   session:
     store-type: redis
-    timeout: 30m
+    timeout: 1800
+
+  #允许跨域的地址
+  cors:
+    allowed-origin-patterns:
+      - http://8.162.3.140
+      - http://www.oxncloud.top
+      - http://localhost:*
+      - http://127.0.0.1:*
 
 server:
   port: 8123
@@ -43,7 +45,7 @@ knife4j:
     version: 1.0
     group:
       default:
-#        group-name: 默认分组
+        #        group-name: 默认分组
         api-rule: package
         api-rule-resources:
           - com.oxn.aiPicturesStore.controller
@@ -52,3 +54,7 @@ knife4j:
 dashscope:
   apiKey: sk-3d14e742252746e6aba673324b64b41d # 替换为你的DashScope API Key
   apiUrl: https://dashscope.aliyuncs.com/api/v1/services/aigc/multimodal-generation/generation
+
+# 图片访问前缀配置
+nginx:
+  proxyUrl: http://www.oxncloud.top/cos

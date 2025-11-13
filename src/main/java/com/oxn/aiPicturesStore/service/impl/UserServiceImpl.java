@@ -4,12 +4,14 @@ import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.util.ObjUtil;
 import cn.hutool.core.util.StrUtil;
 import cn.hutool.http.server.HttpServerRequest;
+import java.util.regex.Pattern;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.oxn.aiPicturesStore.constant.UserConstant;
 import com.oxn.aiPicturesStore.enums.StatusCode;
 import com.oxn.aiPicturesStore.exception.BusinessException;
 import com.oxn.aiPicturesStore.exception.ThrowUtils;
+import com.oxn.aiPicturesStore.manager.auth.StpKit;
 import com.oxn.aiPicturesStore.model.dto.user.UserQueryRequest;
 import com.oxn.aiPicturesStore.model.entity.User;
 import com.oxn.aiPicturesStore.model.vo.UserLoginVo;
@@ -27,19 +29,20 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 /**
-* @author 34576
-* @description 针对表【user(用户)】的数据库操作Service实现
-* @createDate 2025-09-21 19:51:56
-*/
+ * @author 34576
+ * @description 针对表【user(用户)】的数据库操作Service实现
+ * @createDate 2025-09-21 19:51:56
+ */
 @Service
 public class UserServiceImpl extends ServiceImpl<UserMapper, User>
-    implements UserService{
+        implements UserService {
 
     @Autowired
     private UserMapper userMapper;
 
     /**
      * 用户登录
+     *
      * @param userAccount
      * @param userPassword
      * @return
@@ -47,32 +50,42 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
     @Override
     public UserLoginVo userLogin(String userAccount, String userPassword, HttpServletRequest request) {
         //1.数据校验
-        if(userAccount==null||userPassword==null){
-            throw new BusinessException(StatusCode.PARAMS_ERROR,"参数不能为空");
+        if (userAccount == null || userPassword == null) {
+            throw new BusinessException(StatusCode.PARAMS_ERROR, "参数不能为空");
         }
-        if(userAccount.length()<4){
-            throw new BusinessException(StatusCode.PARAMS_ERROR,"账号过短");
+        if (userAccount.length() < 4) {
+            throw new BusinessException(StatusCode.PARAMS_ERROR, "账号过短");
         }
-        if(userPassword.length()<8){
-            throw new BusinessException(StatusCode.PARAMS_ERROR,"密码过短");
+        if (containsChinese(userAccount)) {
+            throw new BusinessException(StatusCode.PARAMS_ERROR, "账号不能包含中文字符");
+        }
+        if (userPassword.length() < 8) {
+            throw new BusinessException(StatusCode.PARAMS_ERROR, "密码过短");
         }
         //2.密码加密
         String encryptPassword = getEncryptPassword(userPassword);
         //3.查询用户
         QueryWrapper<User> userQueryWrapper = new QueryWrapper<>();
-        userQueryWrapper.eq("userAccount",userAccount);
-        userQueryWrapper.eq("userPassword",encryptPassword);
+        userQueryWrapper.eq("userAccount", userAccount);
+        userQueryWrapper.eq("userPassword", encryptPassword);
         User user = userMapper.selectOne(userQueryWrapper);
-        ThrowUtils.throwIf(user==null,StatusCode.PARAMS_ERROR,"账号或密码错误");
+        ThrowUtils.throwIf(user == null, StatusCode.PARAMS_ERROR, "账号或密码错误");
         //4.返回用户信息
-        request.getSession().setAttribute(UserConstant.USER_LOGIN_STATE,user);
+        request.getSession().setAttribute(UserConstant.USER_LOGIN_STATE, user);
+        // 3. 记录用户的登录态
+        request.getSession().setAttribute(UserConstant.USER_LOGIN_STATE, user);
+        // 4. 记录用户登录态到 Sa-token，便于空间鉴权时使用，注意保证该用户信息与 SpringSession 中的信息过期时间一致
+        StpKit.SPACE.login(user.getId());
+        StpKit.SPACE.getSession().set(UserConstant.USER_LOGIN_STATE, user);
+
         UserLoginVo userLoginVo = new UserLoginVo();
-        BeanUtil.copyProperties(user,userLoginVo);
+        BeanUtil.copyProperties(user, userLoginVo);
         return userLoginVo;
     }
 
     /**
      * 用户注册
+     *
      * @param userAccount
      * @param userPassword
      * @param checkPassword
@@ -81,24 +94,27 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
     @Override
     public long userRegister(String userAccount, String userPassword, String checkPassword) {
         //1.数据校验
-        if(userAccount==null||userPassword==null||checkPassword==null){
-            throw new BusinessException(StatusCode.PARAMS_ERROR,"参数不能为空");
+        if (userAccount == null || userPassword == null || checkPassword == null) {
+            throw new BusinessException(StatusCode.PARAMS_ERROR, "参数不能为空");
         }
-        if(userAccount.length()<4){
-            throw new BusinessException(StatusCode.PARAMS_ERROR,"账号过短");
+        if (userAccount.length() < 4) {
+            throw new BusinessException(StatusCode.PARAMS_ERROR, "账号过短");
         }
-        if(userPassword.length()<8){
-            throw new BusinessException(StatusCode.PARAMS_ERROR,"密码过短");
+        if (containsChinese(userAccount)) {
+            throw new BusinessException(StatusCode.PARAMS_ERROR, "账号不能包含中文字符");
         }
-        if(!userPassword.equals(checkPassword)){
-            throw new BusinessException(StatusCode.PARAMS_ERROR,"密码不一致");
+        if (userPassword.length() < 8) {
+            throw new BusinessException(StatusCode.PARAMS_ERROR, "密码过短");
+        }
+        if (!userPassword.equals(checkPassword)) {
+            throw new BusinessException(StatusCode.PARAMS_ERROR, "密码不一致");
         }
         //2.判断是否已创建
         QueryWrapper<User> userQueryWrapper = new QueryWrapper<>();
-        userQueryWrapper.eq("userAccount",userAccount);
+        userQueryWrapper.eq("userAccount", userAccount);
         Long l = userMapper.selectCount(userQueryWrapper);
-        if(l>0){
-            throw new BusinessException(StatusCode.PARAMS_ERROR,"用户已存在");
+        if (l > 0) {
+            throw new BusinessException(StatusCode.PARAMS_ERROR, "用户已存在");
         }
         //3.密码加密
         String encryptPassword = getEncryptPassword(userPassword);
@@ -109,8 +125,8 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
         user.setUserAvatar("https://img.itouxiang.com/m12/13/9a/19cff7d61987.jpg");
         user.setUserName("萌新");
         int insert = userMapper.insert(user);
-        if(insert<=0){
-            throw new BusinessException(StatusCode.SYSTEM_ERROR,"注册失败,系统错误");
+        if (insert <= 0) {
+            throw new BusinessException(StatusCode.SYSTEM_ERROR, "注册失败,系统错误");
         }
         return user.getId();
     }
@@ -118,30 +134,32 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
 
     /**
      * 获取加密密码
+     *
      * @param userPassword
      * @return
      */
     @Override
     public String getEncryptPassword(String userPassword) {
         final String SALT = "ai_pictures_store_oxn";
-        return DigestUtils.md5DigestAsHex((SALT+userPassword).getBytes());
+        return DigestUtils.md5DigestAsHex((SALT + userPassword).getBytes());
     }
 
     /**
      * 获取登录用户信息(管理员使用)
+     *
      * @param request
      * @return
      */
     @Override
     public User getLoginUser(HttpServletRequest request) {
         Object obj = request.getSession().getAttribute(UserConstant.USER_LOGIN_STATE);
-        User user=(User) obj;
-        if(user==null||user.getId()==null){
+        User user = (User) obj;
+        if (user == null || user.getId() == null) {
             throw new BusinessException(StatusCode.NOT_LOGIN_ERROR);
         }
         Long id = user.getId();
         User loginUser = this.getById(id);
-        if(loginUser==null){
+        if (loginUser == null) {
             throw new BusinessException(StatusCode.NOT_LOGIN_ERROR);
         }
         return loginUser;
@@ -149,30 +167,32 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
 
     /**
      * 信息脱敏
+     *
      * @param user
      * @return
      */
     @Override
     public UserLoginVo getUserLoginVo(User user) {
-        if(user==null){
-           return null;
+        if (user == null) {
+            return null;
         }
         UserLoginVo userLoginVo = new UserLoginVo();
-        BeanUtil.copyProperties(user,userLoginVo);
+        BeanUtil.copyProperties(user, userLoginVo);
         return userLoginVo;
     }
 
     /**
      * 用户注册
+     *
      * @param request
      * @return
      */
     @Override
     public boolean userLogout(HttpServletRequest request) {
         Object obj = request.getSession().getAttribute(UserConstant.USER_LOGIN_STATE);
-        User user=(User) obj;
-        if(user==null||user.getId()==null){
-            throw new BusinessException(StatusCode.NOT_LOGIN_ERROR,"用户未登录");
+        User user = (User) obj;
+        if (user == null || user.getId() == null) {
+            throw new BusinessException(StatusCode.NOT_LOGIN_ERROR, "用户未登录");
         }
         request.getSession().removeAttribute(UserConstant.USER_LOGIN_STATE);
         return true;
@@ -180,27 +200,29 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
 
     /**
      * 获取用户信息脱敏
+     *
      * @param user
      * @return
      */
     @Override
     public UserVO getUserVo(User user) {
-        if(user==null){
+        if (user == null) {
             return null;
         }
         UserVO userVO = new UserVO();
-        BeanUtil.copyProperties(user,userVO);
+        BeanUtil.copyProperties(user, userVO);
         return userVO;
     }
 
     /**
      * 获取用户信息列表脱敏
+     *
      * @param list
      * @return
      */
     @Override
     public List<UserVO> getUserVoList(List<User> list) {
-        if(list.isEmpty()){
+        if (list.isEmpty()) {
             return new ArrayList<>();
         }
         return list.stream().map(this::getUserVo).collect(Collectors.toList());
@@ -208,6 +230,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
 
     /**
      * 获取查询条件
+     *
      * @param userQueryRequest
      * @return
      */
@@ -235,11 +258,24 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
 
     @Override
     public Boolean isAdmin(User user) {
-        if(user==null)return false;
+        if (user == null) return false;
         return UserConstant.USER_ROLE_ADMIN.equals(user.getUserRole());
     }
 
-
+    /**
+     * 检查字符串是否包含中文字符
+     *
+     * @param str 待检查的字符串
+     * @return true 如果包含中文字符，否则返回 false
+     */
+    private boolean containsChinese(String str) {
+        if (str == null || str.isEmpty()) {
+            return false;
+        }
+        // 使用正则表达式匹配中文字符（包括基本汉字和扩展A区）
+        Pattern pattern = Pattern.compile("[\u4e00-\u9fa5]");
+        return pattern.matcher(str).find();
+    }
 }
 
 

@@ -156,11 +156,14 @@ public class UserController {
      * @return
      */
     @PostMapping("/update")
-    @AuthCheck(mustRole = UserConstant.USER_ROLE_ADMIN)
-    public BaseResponse<Boolean> updateUser(@RequestBody UserUpdateRequest userUpdateRequest) {
+    public BaseResponse<Boolean> updateUser(@RequestBody UserUpdateRequest userUpdateRequest, HttpServletRequest request) {
         ThrowUtils.throwIf(userUpdateRequest == null, StatusCode.PARAMS_ERROR);
         User user = new User();
         BeanUtil.copyProperties(userUpdateRequest, user);
+        User loginUser = userService.getLoginUser(request);
+        if(!userService.isAdmin(loginUser)&&!user.getId().equals(loginUser.getId())){
+            throw new BusinessException(StatusCode.NO_AUTH_ERROR);
+        }
         boolean update = userService.updateById(user);
         ThrowUtils.throwIf(!update, StatusCode.OPERATION_ERROR);
         return ResultUtils.success(update);

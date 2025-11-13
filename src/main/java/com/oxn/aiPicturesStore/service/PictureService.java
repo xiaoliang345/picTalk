@@ -122,4 +122,21 @@ public interface PictureService extends IService<Picture> {
      * @return
      */
     Boolean deletePicture(Picture picture,User loginUser);
+
+    /**
+     * AI编辑图片
+     * @param pictureUpdateByAIRequest
+     * @return
+     */
+    void AiEditPicture(PictureUpdateByAIRequest pictureUpdateByAIRequest,Picture picture,User loginUser,String taskId);
+
+    /**
+     * 上传头像
+     * @param multipartFile
+     * @param loginUser
+     * @return
+     */
+    String uploadAvatar(MultipartFile multipartFile, User loginUser);
+
+
 }

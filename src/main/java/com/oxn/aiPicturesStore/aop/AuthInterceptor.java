@@ -42,7 +42,7 @@ public class AuthInterceptor {
             return joinPoint.proceed();
         }
         //需要管理员权限，但登录用户不是管理员
-        if(role== UserConstant.USER_ROLE_ADMIN&&!loginUser.getUserRole().equals(UserConstant.USER_ROLE_ADMIN)){
+        if(!loginUser.getUserRole().equals(role)){
             throw new BusinessException(StatusCode.NO_AUTH_ERROR);
         }
         return joinPoint.proceed();

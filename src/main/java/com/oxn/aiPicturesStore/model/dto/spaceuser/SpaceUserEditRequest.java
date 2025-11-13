@@ -20,5 +20,15 @@ public class SpaceUserEditRequest implements Serializable {
      */
     private String spaceRole;
 
+    /**
+     * 空间id
+     */
+    private Long spaceId;
+
+    /**
+     * 用户id
+     */
+    private Long userId;
+
     private static final long serialVersionUID = 1L;
 }
