@@ -49,9 +49,6 @@ public class SpaceUserServiceImpl extends ServiceImpl<SpaceUserMapper, SpaceUser
     @Autowired
     private UserService userService;
 
-    @Autowired
-    private SpaceUserMapper spaceUserMapper;
-
     @Override
     public long addSpaceUser(SpaceUserAddRequest spaceUserAddRequest, User loginUser) {
         SpaceUser spaceUser = new SpaceUser();

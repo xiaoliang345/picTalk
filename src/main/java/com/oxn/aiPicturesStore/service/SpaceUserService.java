@@ -1,6 +1,7 @@
 package com.oxn.aiPicturesStore.service;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.oxn.aiPicturesStore.mapper.SpaceUserMapper;
 import com.oxn.aiPicturesStore.model.dto.spaceuser.SpaceUserAddRequest;
 import com.oxn.aiPicturesStore.model.dto.spaceuser.SpaceUserQueryRequest;
 import com.oxn.aiPicturesStore.model.entity.SpaceUser;

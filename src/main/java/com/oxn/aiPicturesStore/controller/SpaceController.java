@@ -76,6 +76,7 @@ public class SpaceController {
      * 删除空间
      */
     @PostMapping("/delete")
+    @AuthCheck(mustRole = UserConstant.USER_ROLE_ADMIN)
     public BaseResponse<Boolean> deleteSpace(@RequestBody DeleteRequest deleteRequest, HttpServletRequest request) throws MalformedURLException {
         if (deleteRequest == null || deleteRequest.getId() <= 0) {
             throw new BusinessException(StatusCode.PARAMS_ERROR);
@@ -85,8 +86,6 @@ public class SpaceController {
         // 判断是否存在  
         Space oldSpace = spaceService.getById(id);
         ThrowUtils.throwIf(oldSpace == null, StatusCode.NOT_FOUND_ERROR);
-        // 仅本人或管理员可删除  
-        //spaceService.chechUserHasAuth(loginUser,oldSpace);
         // 操作数据库  
         boolean result = spaceService.removeById(id);
         ThrowUtils.throwIf(!result, StatusCode.OPERATION_ERROR);
