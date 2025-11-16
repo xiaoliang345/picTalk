@@ -101,30 +101,68 @@ aiPicturesStore/
 - Redis 5.0 或以上版本
 - Maven 3.6 或以上版本
 
+
 ## 快速开始
 
-1. 克隆项目：
-   ```
+1. **克隆项目**：
+   ```bash
    git clone <项目地址>
    ```
 
-2. 创建数据库并导入初始化脚本
+2. **创建数据库并导入初始化脚本**  
+   创建名为 `ai_pictures_store` 的 MySQL 数据库，并执行项目中的 SQL 初始化脚本（通常位于 `src/main/resources/sql/` 目录）。
 
-3. 修改配置文件 `application.yml` 中的相关配置：
-   - 数据库连接信息
-   - Redis 配置
-   - 腾讯云 COS 配置
-   - 阿里云 DashScope 配置
+3. **新建环境配置文件**  
+   在 `src/main/resources/` 目录下，分别创建以下两个配置文件：
 
-4. 使用 Maven 编译项目：
+   - **本地开发环境**：`application-local.yml`
+   - **生产环境**：`application-prod.yml`
+
+   并在两个文件中填入对应的配置信息（示例如下）：
+
+   ```yaml
+   # application-local.yml 或 application-prod.yml
+   spring:
+     datasource:
+       driver-class-name: com.mysql.cj.jdbc.Driver
+       url: jdbc:mysql://localhost:3306/ai_pictures_store
+       username: your_db_username      # 替换为你的数据库用户名
+       password: your_db_password      # 替换为你的数据库密码
+
+   cos:
+     client:
+       host: https://cos.<region>.myqcloud.com  # 替换为实际 COS 访问域名
+       secretId: your_secret_id                 # 替换为腾讯云 SecretId
+       secretKey: your_secret_key               # 替换为腾讯云 SecretKey
+       region: ap-beijing                       # 替换为你的 COS 所在区域，如 ap-shanghai
+       bucket: your-bucket-name-1250000000      # 替换为你的存储桶名称（含 APPID）
+
+   # DashScope 配置阿里百炼
+   dashscope:
+      apiKey:  # 替换为你的DashScope API Key
+      apiUrl:  
    ```
+
+   > 💡 提示：  
+   > - `application-local.yml` 用于本地开发，可连接本地 MySQL 和测试用 COS；  
+   > - `application-prod.yml` 用于生产部署，应填写线上数据库和正式 COS 配置；  
+   > - 启动时通过 `--spring.profiles.active=local` 或 `prod` 指定使用哪个配置。
+
+4. **使用 Maven 编译项目**：
+   ```bash
    mvn clean install
    ```
 
-5. 启动项目：
+5. **启动项目**（以本地环境为例）：
+   ```bash
+   mvn spring-boot:run --spring.profiles.active=local
    ```
-   mvn spring-boot:run
+
+   若部署到生产环境，可打包后运行：
+   ```bash
+   java -jar target/your-app.jar --spring.profiles.active=prod
    ```
+```
 
 或者打包后运行：
 ```
