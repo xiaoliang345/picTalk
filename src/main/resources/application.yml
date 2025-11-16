@@ -51,10 +51,6 @@ knife4j:
         api-rule-resources:
           - com.oxn.aiPicturesStore.controller
 
-# DashScope 配置
-dashscope:
-  apiKey: sk-3d14e742252746e6aba673324b64b41d # 替换为你的DashScope API Key
-  apiUrl: https://dashscope.aliyuncs.com/api/v1/services/aigc/multimodal-generation/generation
 
 
 #文件上传地址

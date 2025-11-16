@@ -11,7 +11,7 @@
  Target Server Version : 50744
  File Encoding         : 65001
 
- Date: 13/11/2025 14:11:03
+ Date: 16/11/2025 14:49:02
 */
 
 SET NAMES utf8mb4;
@@ -42,6 +42,26 @@ INSERT INTO `comment` VALUES (2, 14, 1969752947225530369, 0, NULL, '不错哟', 
 INSERT INTO `comment` VALUES (3, 14, 1969752947225530369, 2, 1969752947225530369, '一般般', '2025-11-07 10:54:29', 0);
 INSERT INTO `comment` VALUES (4, 14, 1976882229613694977, 3, 1969752947225530369, '行帮', '2025-11-07 10:54:55', 0);
 INSERT INTO `comment` VALUES (6, 15, 1969752947225530369, 0, NULL, '啊发发😆', '2025-11-07 11:34:10', 0);
+
+-- ----------------------------
+-- Table structure for file_share
+-- ----------------------------
+DROP TABLE IF EXISTS `file_share`;
+CREATE TABLE `file_share`  (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT COMMENT '主键',
+  `share_code` varchar(16) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '取件码（唯一）',
+  `file_name` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '上传的文件名（单个）',
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `expires_at` datetime NOT NULL COMMENT '过期时间（created_at + 20分钟）',
+  `ip_address` varchar(45) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL DEFAULT NULL COMMENT '上传者IP地址（可选）',
+  PRIMARY KEY (`id`) USING BTREE,
+  UNIQUE INDEX `uk_share_code`(`share_code`) USING BTREE,
+  INDEX `idx_expires_at`(`expires_at`) USING BTREE
+) ENGINE = InnoDB AUTO_INCREMENT = 1989940566144151555 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '单文件分享记录表' ROW_FORMAT = DYNAMIC;
+
+-- ----------------------------
+-- Records of file_share
+-- ----------------------------
 
 -- ----------------------------
 -- Table structure for picture
