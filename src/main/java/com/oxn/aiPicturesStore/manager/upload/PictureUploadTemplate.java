@@ -29,14 +29,10 @@ import java.util.List;
 @Slf4j
 public abstract class PictureUploadTemplate {
 
-    @Resource
-    private CosClientConfig cosClientConfig;
 
     @Resource
     private CosManager cosManager;
 
-    @Resource
-    private COSClient cosClient;
 
     /**
      * 图片访问前缀

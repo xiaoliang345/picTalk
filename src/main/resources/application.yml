@@ -9,7 +9,8 @@ spring:
     timeout: 5000
   servlet:
     multipart:
-      max-file-size: 2MB
+      max-file-size: 100MB     # 单个文件最大 100MB
+      max-request-size: 100MB  # 整个请求最大 100MB（如果只传一个文件，两者可相同）
   session:
     store-type: redis
     timeout: 1800
@@ -54,6 +55,15 @@ knife4j:
 dashscope:
   apiKey: sk-3d14e742252746e6aba673324b64b41d # 替换为你的DashScope API Key
   apiUrl: https://dashscope.aliyuncs.com/api/v1/services/aigc/multimodal-generation/generation
+
+
+#文件上传地址
+file:
+  upload-dir: D:/share
+
+# 文件清理配置
+cleanup:
+  cron: 0 */10 * * * ?
 
 # 图片访问前缀配置
 nginx:
