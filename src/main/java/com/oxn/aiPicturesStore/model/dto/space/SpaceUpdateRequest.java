@@ -4,7 +4,6 @@ import lombok.Data;
 
 import java.io.Serializable;
 
-//管理员修改空间
 @Data
 public class SpaceUpdateRequest implements Serializable {
 
@@ -22,6 +21,11 @@ public class SpaceUpdateRequest implements Serializable {
      * 空间级别：0-普通版 1-专业版 2-旗舰版
      */
     private Integer spaceLevel;
+
+    /**
+     * 空间类型：0-私有 1-团队
+     */
+    private Integer spaceType;
 
     /**
      * 空间图片的最大总大小

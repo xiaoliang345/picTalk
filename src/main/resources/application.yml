@@ -9,8 +9,8 @@ spring:
     timeout: 5000
   servlet:
     multipart:
-      max-file-size: 100MB     # 单个文件最大 100MB
-      max-request-size: 100MB  # 整个请求最大 100MB（如果只传一个文件，两者可相同）
+      max-file-size: 50MB     # 单个文件最大 100MB
+      max-request-size: 50MB  # 整个请求最大 100MB（如果只传一个文件，两者可相同）
   session:
     store-type: redis
     timeout: 1800
@@ -40,7 +40,7 @@ mybatis-plus:
       logic-not-delete-value: 0
 
 knife4j:
-  enable: true
+  enable: false
   openapi:
     title: 接口文档
     version: 1.0

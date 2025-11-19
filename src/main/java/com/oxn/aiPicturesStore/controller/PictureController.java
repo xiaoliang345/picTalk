@@ -229,12 +229,12 @@ public class PictureController {
         }
 
         // 4. 获取当前用户权限列表（用于前端展示）
-        //User loginUser = userService.getLoginUser(request);
-        //List<String> permissionList = spaceUserAuthManager.getPermissionList(space, loginUser);
+        User loginUser = userService.getLoginUser(request);
+        List<String> permissionList = spaceUserAuthManager.getPermissionList(space, loginUser);
 
         // 5. 构建返回 VO
         PictureVO pictureVO = pictureService.getPictureVO(picture, request);
-        //pictureVO.setPermissionList(permissionList);
+        pictureVO.setPermissionList(permissionList);
 
         return ResultUtils.success(pictureVO);
     }
