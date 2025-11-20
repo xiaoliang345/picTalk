@@ -13,20 +13,16 @@ import com.oxn.aiPicturesStore.exception.BusinessException;
 import com.oxn.aiPicturesStore.exception.ThrowUtils;
 import com.oxn.aiPicturesStore.manager.auth.annotation.SaSpaceCheckPermission;
 import com.oxn.aiPicturesStore.manager.auth.model.SpaceUserPermissionConstant;
-import com.oxn.aiPicturesStore.model.dto.spaceuser.SpaceUserAddRequest;
-import com.oxn.aiPicturesStore.model.dto.spaceuser.SpaceUserEditRequest;
-import com.oxn.aiPicturesStore.model.dto.spaceuser.SpaceUserQueryRequest;
+import com.oxn.aiPicturesStore.model.dto.spaceuser.*;
 import com.oxn.aiPicturesStore.model.entity.SpaceUser;
 import com.oxn.aiPicturesStore.model.entity.User;
+import com.oxn.aiPicturesStore.model.vo.IniteInfoVO;
 import com.oxn.aiPicturesStore.model.vo.SpaceUserVO;
 import com.oxn.aiPicturesStore.service.SpaceUserService;
 import com.oxn.aiPicturesStore.service.UserService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
@@ -51,7 +47,7 @@ public class SpaceUserController {
     public BaseResponse<Long> addSpaceUser(@RequestBody SpaceUserAddRequest spaceUserAddRequest, HttpServletRequest request) {
         ThrowUtils.throwIf(spaceUserAddRequest == null, StatusCode.PARAMS_ERROR);
         User loginUser = userService.getLoginUser(request);
-        long id = spaceUserService.addSpaceUser(spaceUserAddRequest,loginUser);
+        long id = spaceUserService.addSpaceUser(spaceUserAddRequest, loginUser);
         return ResultUtils.success(id);
     }
 
@@ -122,7 +118,7 @@ public class SpaceUserController {
         SpaceUser spaceUser = new SpaceUser();
         BeanUtils.copyProperties(spaceUserEditRequest, spaceUser);
         // 数据校验
-        spaceUserService.validSpaceUser(spaceUser, false,loginUser);
+        spaceUserService.validSpaceUser(spaceUser, false, loginUser);
         // 判断是否存在
         long id = spaceUserEditRequest.getId();
         SpaceUser oldSpaceUser = spaceUserService.getById(id);
@@ -133,7 +129,7 @@ public class SpaceUserController {
         return ResultUtils.success(true);
     }
 
-    /**     
+    /**
      * 查询我加入的团队空间列表
      */
     @PostMapping("/list/my")
@@ -145,5 +141,38 @@ public class SpaceUserController {
                 spaceUserService.getQueryWrapper(spaceUserQueryRequest)
         );
         return ResultUtils.success(spaceUserService.getSpaceUserVO(spaceUserList));
+    }
+
+    /**
+     * 生成邀请链接
+     */
+    @PostMapping("/link/{spaceId}")
+    public BaseResponse<String> createIniteLink(@PathVariable Long spaceId, HttpServletRequest request) {
+        ThrowUtils.throwIf(spaceId == null, StatusCode.PARAMS_ERROR, "空间id为空");
+        User loginUser = userService.getLoginUser(request);
+        String initeLinkCode = spaceUserService.createIniteLink(spaceId, loginUser);
+        return ResultUtils.success(initeLinkCode);
+    }
+
+    /**
+     * 获取邀请信息
+     */
+    @PostMapping("/inviteInfo/{inviteCode}")
+    public BaseResponse<IniteInfoVO> getInviteInfo(@PathVariable String inviteCode, HttpServletRequest request) {
+        ThrowUtils.throwIf(inviteCode == null, StatusCode.PARAMS_ERROR, "邀请码不能为空");
+        User loginUser = userService.getLoginUser(request);
+        IniteInfoVO inviteInfo = spaceUserService.getInviteInfo(inviteCode);
+        return ResultUtils.success(inviteInfo);
+    }
+
+    /**
+     * 接受邀请
+     */
+    @PostMapping("/acceptInvite/{inviteCode}")
+    public BaseResponse<Boolean> acceptInvite(@PathVariable String inviteCode, HttpServletRequest request) {
+        ThrowUtils.throwIf(inviteCode == null, StatusCode.PARAMS_ERROR, "邀请码不能为空");
+        User loginUser = userService.getLoginUser(request);
+        boolean result = spaceUserService.acceptInvite(inviteCode, loginUser);
+        return ResultUtils.success(result);
     }
 }

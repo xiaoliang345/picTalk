@@ -35,8 +35,8 @@ public class FilePictureUpload extends PictureUploadTemplate{
         ThrowUtils.throwIf(multipartFile == null, StatusCode.SYSTEM_ERROR, "文件不能为空");
         // 校验文件大小
         long size = multipartFile.getSize();
-        final int FILE_SIZE = 1024 * 1024 * 2;
-        ThrowUtils.throwIf(size > FILE_SIZE, StatusCode.SYSTEM_ERROR, "文件大小不能超过2MB");
+        final int FILE_SIZE = 1024 * 1024 * 3;
+        ThrowUtils.throwIf(size > FILE_SIZE, StatusCode.SYSTEM_ERROR, "文件大小不能超过3MB");
         //文件类型
         String contentType = multipartFile.getContentType();
         final List<String> FILE_TYPE = PictureConstant.FILE_TYPE;

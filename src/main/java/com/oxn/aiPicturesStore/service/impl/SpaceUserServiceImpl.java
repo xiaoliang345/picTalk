@@ -4,18 +4,22 @@ import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.util.ObjUtil;
 import cn.hutool.core.util.StrUtil;
+import cn.hutool.json.JSONUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.oxn.aiPicturesStore.common.BaseResponse;
 import com.oxn.aiPicturesStore.enums.SpaceRoleEnum;
 import com.oxn.aiPicturesStore.enums.StatusCode;
 import com.oxn.aiPicturesStore.exception.BusinessException;
 import com.oxn.aiPicturesStore.exception.ThrowUtils;
+import com.oxn.aiPicturesStore.model.dto.spaceuser.InviteUserRequest;
 import com.oxn.aiPicturesStore.model.dto.spaceuser.SpaceUserAddRequest;
 import com.oxn.aiPicturesStore.model.dto.spaceuser.SpaceUserQueryRequest;
 import com.oxn.aiPicturesStore.model.entity.Space;
 import com.oxn.aiPicturesStore.model.entity.SpaceUser;
 import com.oxn.aiPicturesStore.model.entity.User;
+import com.oxn.aiPicturesStore.model.vo.IniteInfoVO;
 import com.oxn.aiPicturesStore.model.vo.SpaceUserVO;
 import com.oxn.aiPicturesStore.model.vo.SpaceVO;
 import com.oxn.aiPicturesStore.model.vo.UserVO;
@@ -25,12 +29,15 @@ import com.oxn.aiPicturesStore.mapper.SpaceUserMapper;
 import com.oxn.aiPicturesStore.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
+import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.data.redis.core.ValueOperations;
 import org.springframework.stereotype.Service;
 
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import javax.servlet.http.HttpServletRequest;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
+import java.util.*;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 /**
@@ -48,6 +55,9 @@ public class SpaceUserServiceImpl extends ServiceImpl<SpaceUserMapper, SpaceUser
 
     @Autowired
     private UserService userService;
+
+    @Autowired
+    private StringRedisTemplate stringRedisTemplate;
 
     @Override
     public long addSpaceUser(SpaceUserAddRequest spaceUserAddRequest, User loginUser) {
@@ -122,7 +132,7 @@ public class SpaceUserServiceImpl extends ServiceImpl<SpaceUserMapper, SpaceUser
     }
 
     @Override
-    public void validSpaceUser(SpaceUser spaceUser, Boolean add,User loginUser) {
+    public void validSpaceUser(SpaceUser spaceUser, Boolean add, User loginUser) {
         Long id = spaceUser.getId();
         String spaceRole = spaceUser.getSpaceRole();
         Long spaceId = spaceUser.getSpaceId();
@@ -145,6 +155,74 @@ public class SpaceUserServiceImpl extends ServiceImpl<SpaceUserMapper, SpaceUser
         }
 
     }
+
+    @Override
+    public Long inviteUser(Long spaceId, User loginUser) {
+        LambdaQueryWrapper<SpaceUser> queryWrapper = new LambdaQueryWrapper<>();
+        queryWrapper.eq(SpaceUser::getSpaceId, spaceId);
+        queryWrapper.eq(SpaceUser::getUserId, loginUser.getId());
+        SpaceUser spaceUser = this.getOne(queryWrapper);
+        ThrowUtils.throwIf(spaceUser != null, StatusCode.PARAMS_ERROR, "该用户已加入空间，请勿重复添加");
+        Space space = spaceService.getById(spaceId);
+        ThrowUtils.throwIf(space == null, StatusCode.PARAMS_ERROR, "空间不存在");
+        spaceUser = new SpaceUser();
+        spaceUser.setSpaceRole(SpaceRoleEnum.VIEWER.getValue());
+        spaceUser.setSpaceId(spaceId);
+        spaceUser.setUserId(loginUser.getId());
+        boolean save = this.save(spaceUser);
+        return spaceId;
+    }
+
+    @Override
+    public String createIniteLink(Long spaceId, User loginUser) {
+        Space space = spaceService.getById(spaceId);
+        ThrowUtils.throwIf(space == null, StatusCode.PARAMS_ERROR, "空间不存在");
+        //将链接信息存入redis20分钟内有效
+        ValueOperations<String, String> valueOperations = stringRedisTemplate.opsForValue();
+        String string = UUID.randomUUID().toString();
+        IniteInfoVO initeInfoVO = new IniteInfoVO();
+        initeInfoVO.setSpaceName(space.getSpaceName());
+        initeInfoVO.setUserName(loginUser.getUserName());
+        initeInfoVO.setUserId(loginUser.getId());
+        initeInfoVO.setSpaceId(spaceId);
+        initeInfoVO.setExpireTime(LocalDateTime.now().plusMinutes(20));
+        // 使用JSON序列化存储对象
+        String jsonString = JSONUtil.toJsonStr(initeInfoVO);
+        //存入redis,20分钟内有效
+        valueOperations.set(string, jsonString, 20, TimeUnit.MINUTES);
+        return string;
+    }
+
+    @Override
+    public IniteInfoVO getInviteInfo(String inviteCode) {
+        ValueOperations<String, String> valueOperations = stringRedisTemplate.opsForValue();
+        String inviteInfoStr = valueOperations.get(inviteCode.toString());
+        // 使用JSON反序列化恢复对象
+        IniteInfoVO initeInfoVO = JSONUtil.toBean(inviteInfoStr, IniteInfoVO.class);
+        ThrowUtils.throwIf(initeInfoVO == null, StatusCode.PARAMS_ERROR, "邀请信息不存在/已失效");
+        return initeInfoVO;
+    }
+
+    @Override
+    public boolean acceptInvite(String inviteCode, User loginUser) {
+        IniteInfoVO inviteInfo = this.getInviteInfo(inviteCode);
+        Long spaceId = inviteInfo.getSpaceId();
+        Space space = spaceService.getById(spaceId);
+        ThrowUtils.throwIf(space == null, StatusCode.PARAMS_ERROR, "空间不存在");
+        LambdaQueryWrapper<SpaceUser> queryWrapper = new LambdaQueryWrapper<>();
+        queryWrapper.eq(SpaceUser::getSpaceId, spaceId);
+        queryWrapper.eq(SpaceUser::getUserId, loginUser.getId());
+        SpaceUser spaceUser = this.getOne(queryWrapper);
+        ThrowUtils.throwIf(spaceUser != null, StatusCode.PARAMS_ERROR, "该用户已加入空间，请勿重复添加");
+        spaceUser = new SpaceUser();
+        spaceUser.setSpaceRole(SpaceRoleEnum.VIEWER.getValue());
+        spaceUser.setSpaceId(spaceId);
+        spaceUser.setUserId(loginUser.getId());
+        boolean save = this.save(spaceUser);
+        return save;
+    }
+
+
 }
 
 

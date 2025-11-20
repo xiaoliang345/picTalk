@@ -14,6 +14,9 @@ spring:
   session:
     store-type: redis
     timeout: 1800
+  jackson:
+    date-format: yyyy-MM-dd HH:mm
+    time-zone: GMT+8
 
   #允许跨域的地址
   cors:

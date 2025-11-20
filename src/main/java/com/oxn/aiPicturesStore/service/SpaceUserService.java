@@ -1,12 +1,12 @@
 package com.oxn.aiPicturesStore.service;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
-import com.oxn.aiPicturesStore.mapper.SpaceUserMapper;
 import com.oxn.aiPicturesStore.model.dto.spaceuser.SpaceUserAddRequest;
 import com.oxn.aiPicturesStore.model.dto.spaceuser.SpaceUserQueryRequest;
 import com.oxn.aiPicturesStore.model.entity.SpaceUser;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.oxn.aiPicturesStore.model.entity.User;
+import com.oxn.aiPicturesStore.model.vo.IniteInfoVO;
 import com.oxn.aiPicturesStore.model.vo.SpaceUserVO;
 
 import java.util.List;
@@ -53,4 +53,34 @@ public interface SpaceUserService extends IService<SpaceUser> {
      * @param add
      */
     void validSpaceUser(SpaceUser spaceUser, Boolean add, User loginUser);
+
+    /**
+     * 邀请用户加入空间
+     * @param spaceId
+     * @param loginUser
+     * @return
+     */
+    Long inviteUser(Long spaceId,User loginUser);
+
+    /**
+     * 创建邀请链接
+     * @param spaceId
+     * @param loginUser
+     */
+    String createIniteLink(Long spaceId, User loginUser);
+
+    /**
+     * 获取邀请信息
+     * @param inviteCode
+     * @return
+     */
+    IniteInfoVO getInviteInfo(String inviteCode);
+
+    /**
+     * 接受邀请
+     * @param inviteCode
+     * @param loginUser
+     * @return
+     */
+    boolean acceptInvite(String inviteCode, User loginUser);
 }
