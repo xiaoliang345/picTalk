@@ -3,6 +3,7 @@ package com.oxn.aiPicturesStore.controller;
 
 import cn.hutool.core.util.RandomUtil;
 import cn.hutool.json.JSONUtil;
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
@@ -157,9 +158,10 @@ public class SpaceController {
     public BaseResponse<Page<Space>> listSpaceByPage(@RequestBody SpaceQueryRequest spaceQueryRequest) {
         long current = spaceQueryRequest.getCurrent();
         long size = spaceQueryRequest.getPageSize();
-        // 查询数据库  
-        Page<Space> spacePage = spaceService.page(new Page<>(current, size),
-                spaceService.getQueryWrapper(spaceQueryRequest));
+        // 查询数据库
+        QueryWrapper<Space> queryWrapper = spaceService.getQueryWrapper(spaceQueryRequest);
+        Page<Space> spacePage = spaceService.page(new Page<>(current, size), queryWrapper);
+
         return ResultUtils.success(spacePage);
     }
 
@@ -167,6 +169,7 @@ public class SpaceController {
      * 分页获取空间列表（封装类）
      */
     @PostMapping("/list/page/vo")
+    @AuthCheck(mustRole = UserConstant.USER_ROLE_ADMIN)
     public BaseResponse<Page<SpaceVO>> listSpaceVOByPage(@RequestBody SpaceQueryRequest spaceQueryRequest,
                                                          HttpServletRequest request) {
         long current = spaceQueryRequest.getCurrent();
@@ -175,7 +178,6 @@ public class SpaceController {
         ThrowUtils.throwIf(size > 20, StatusCode.PARAMS_ERROR);
         // 查询数据库
         User loginUser = userService.getLoginUser(request);
-        spaceQueryRequest.setUserId(loginUser.getId());
         Page<Space> spacePage = spaceService.page(new Page<>(current, size),
                 spaceService.getQueryWrapper(spaceQueryRequest));
         // 获取封装类  

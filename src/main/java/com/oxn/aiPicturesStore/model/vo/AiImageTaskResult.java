@@ -1,4 +1,4 @@
-package com.oxn.aiPicturesStore.model.dto.picture;
+package com.oxn.aiPicturesStore.model.vo;
 
 import com.oxn.aiPicturesStore.enums.TaskStatus;
 import lombok.Data;

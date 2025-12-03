@@ -3,7 +3,9 @@ package com.oxn.aiPicturesStore.service;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.IService;
+import com.oxn.aiPicturesStore.enums.ImageOperation;
 import com.oxn.aiPicturesStore.enums.PictureReviewStatusEnum;
+import com.oxn.aiPicturesStore.exception.BusinessException;
 import com.oxn.aiPicturesStore.model.dto.picture.*;
 import com.oxn.aiPicturesStore.model.entity.Picture;
 import com.oxn.aiPicturesStore.model.entity.User;
@@ -116,6 +118,13 @@ public interface PictureService extends IService<Picture> {
     String pictureEditByAI(PictureUpdateByAIRequest pictureUpdateByAIRequest, Picture picture,User loginUser);
 
     /**
+     * 根据描述生成新图片
+     * @param pictureCreateByAIRequest
+     * @param loginUser
+     */
+    String pictureCreateByAI(PictureCreateByAIRequest pictureCreateByAIRequest, User loginUser);
+
+    /**
      * 删除图片
      * @param picture
      * @param loginUser
@@ -123,12 +132,7 @@ public interface PictureService extends IService<Picture> {
      */
     Boolean deletePicture(Picture picture,User loginUser);
 
-    /**
-     * AI编辑图片
-     * @param pictureUpdateByAIRequest
-     * @return
-     */
-    void AiEditPicture(PictureUpdateByAIRequest pictureUpdateByAIRequest,Picture picture,User loginUser,String taskId);
+
 
     /**
      * 上传头像
@@ -138,5 +142,27 @@ public interface PictureService extends IService<Picture> {
      */
     String uploadAvatar(MultipartFile multipartFile, User loginUser);
 
+    /**
+     * AI编辑图片（异步）
+     * @param pictureUpdateByAIRequest 包含图片ID和编辑描述
+     * @param picture 原始图片对象
+     * @param loginUser 当前登录用户
+     * @param taskId 任务ID
+     */
+    void AiEditPictureAsync(PictureUpdateByAIRequest pictureUpdateByAIRequest, Picture picture, User loginUser, String taskId);
 
+    /**
+     * AI创建图片（异步）
+     * @param pictureCreateByAIRequest 包含生成描述和图片名称
+     * @param loginUser 当前登录用户
+     * @param taskId 任务ID
+     */
+    void AiCreatePictureAsync(PictureCreateByAIRequest pictureCreateByAIRequest, User loginUser, String taskId);
+
+    /**
+     * 检查并保存 AI 任务数量限制。会不断尝试更新任务计数。
+     *
+     * @throws BusinessException 当任务数超出限制时抛出
+     */
+    void checkAndIncrementTaskCount(ImageOperation imageOperation);
 }

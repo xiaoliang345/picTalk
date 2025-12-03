@@ -1,4 +1,4 @@
-package com.oxn.aiPicturesStore.model.dto.picture;
+package com.oxn.aiPicturesStore.model.vo;
 
 
 import cn.hutool.core.util.NumberUtil;

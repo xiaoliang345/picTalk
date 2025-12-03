@@ -1,23 +1,18 @@
 package com.oxn.aiPicturesStore.manager.upload;
 
-import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.io.FileUtil;
 import cn.hutool.core.util.NumberUtil;
 import cn.hutool.core.util.RandomUtil;
-import com.oxn.aiPicturesStore.config.CosClientConfig;
 import com.oxn.aiPicturesStore.enums.StatusCode;
 import com.oxn.aiPicturesStore.exception.BusinessException;
 import com.oxn.aiPicturesStore.manager.CosManager;
 import com.oxn.aiPicturesStore.model.dto.file.UploadPictureResult;
-import com.oxn.aiPicturesStore.model.dto.picture.PicttureBuildResult;
-import com.qcloud.cos.COSClient;
-import com.qcloud.cos.model.ObjectMetadata;
+import com.oxn.aiPicturesStore.model.vo.PicttureBuildResult;
 import com.qcloud.cos.model.PutObjectResult;
 import com.qcloud.cos.model.ciModel.persistence.CIObject;
 import com.qcloud.cos.model.ciModel.persistence.ImageInfo;
 import com.qcloud.cos.model.ciModel.persistence.ProcessResults;
 import lombok.extern.slf4j.Slf4j;
-import org.checkerframework.checker.units.qual.C;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Value;
 

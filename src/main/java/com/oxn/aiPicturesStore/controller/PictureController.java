@@ -1,10 +1,8 @@
 package com.oxn.aiPicturesStore.controller;
 
 
-import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.util.RandomUtil;
 import cn.hutool.core.util.StrUtil;
-import cn.hutool.crypto.digest.DigestUtil;
 import cn.hutool.json.JSONUtil;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.github.benmanes.caffeine.cache.Cache;
@@ -15,13 +13,12 @@ import com.oxn.aiPicturesStore.common.DeleteRequest;
 import com.oxn.aiPicturesStore.common.ResultUtils;
 import com.oxn.aiPicturesStore.constant.PictureConstant;
 import com.oxn.aiPicturesStore.constant.UserConstant;
+import com.oxn.aiPicturesStore.enums.ImageOperation;
 import com.oxn.aiPicturesStore.enums.PictureReviewStatusEnum;
 import com.oxn.aiPicturesStore.enums.StatusCode;
-import com.oxn.aiPicturesStore.enums.TaskStatus;
 import com.oxn.aiPicturesStore.exception.BusinessException;
 import com.oxn.aiPicturesStore.exception.ThrowUtils;
 import com.oxn.aiPicturesStore.manager.AiTaskManager;
-import com.oxn.aiPicturesStore.manager.CosManager;
 import com.oxn.aiPicturesStore.manager.auth.SpaceUserAuthManager;
 import com.oxn.aiPicturesStore.manager.auth.StpKit;
 import com.oxn.aiPicturesStore.manager.auth.annotation.SaSpaceCheckPermission;
@@ -30,41 +27,25 @@ import com.oxn.aiPicturesStore.model.dto.picture.*;
 import com.oxn.aiPicturesStore.model.entity.Picture;
 import com.oxn.aiPicturesStore.model.entity.Space;
 import com.oxn.aiPicturesStore.model.entity.User;
+import com.oxn.aiPicturesStore.model.vo.AiImageTaskResult;
 import com.oxn.aiPicturesStore.model.vo.PictureTagCategory;
 import com.oxn.aiPicturesStore.model.vo.PictureVO;
 import com.oxn.aiPicturesStore.service.PictureService;
 import com.oxn.aiPicturesStore.service.SpaceService;
 import com.oxn.aiPicturesStore.service.UserService;
-import com.qcloud.cos.model.COSObject;
-import com.qcloud.cos.model.COSObjectInputStream;
-import com.qcloud.cos.utils.IOUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.core.task.TaskExecutor;
-import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.core.ValueOperations;
 import org.springframework.util.DigestUtils;
 import org.springframework.util.ObjectUtils;
-import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
-
 import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import java.io.File;
-import java.io.IOException;
 import java.net.MalformedURLException;
-import java.time.LocalDateTime;
-import java.time.temporal.ChronoUnit;
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
-import java.util.Random;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 
 @RestController
@@ -347,7 +328,7 @@ public class PictureController {
         long id = pictureEditRequest.getId();
         Picture oldPicture = pictureService.getById(id);
         ThrowUtils.throwIf(oldPicture == null, StatusCode.NOT_FOUND_ERROR);
-        if(!ObjectUtils.isEmpty(oldPicture.getSpaceId())){
+        if (!ObjectUtils.isEmpty(oldPicture.getSpaceId())) {
             picture.setSpaceId(oldPicture.getSpaceId());
         }
         //补充审核参数
@@ -433,26 +414,41 @@ public class PictureController {
         }
         User loginUser = userService.getLoginUser(request);
 
-        ValueOperations<String, String> valueOperations = stringRedisTemplate.opsForValue();
-        String taskCountStr = valueOperations.get("task_count");
-        long taskCount = 0;
-        Long ttl = stringRedisTemplate.getExpire("task_count", TimeUnit.SECONDS);
-        LocalDateTime now = LocalDateTime.now();
-        LocalDateTime endOfDay = now.toLocalDate().atTime(23, 59, 59);
-        long between = ChronoUnit.SECONDS.between(now, endOfDay);
-        // 如果时间过期或者没有值，则设置时间并初始化任务数量为1
-        if (ttl.equals(-1L) || StringUtils.isEmpty(taskCountStr)) {
-            valueOperations.set("task_count", "1", between, TimeUnit.SECONDS);
-        } else {
-            taskCount = Long.parseLong(taskCountStr);
-            if (taskCount >= 7) {
-                return new BaseResponse<>(StatusCode.OPERATION_ERROR.getCode(), null, "任务数量已达上限");
-            }
-            taskCount++;
-            valueOperations.set("task_count", String.valueOf(taskCount), between, TimeUnit.SECONDS);
+        // 检查任务数量限制
+        try {
+            pictureService.checkAndIncrementTaskCount(ImageOperation.EDIT);
+        } catch (BusinessException e) {
+            return new BaseResponse<>(e.getCode(), null, e.getMessage());
         }
+
         String taskId = aiTaskManager.createTask(description);
-        pictureService.AiEditPicture(pictureUpdateByAIRequest, picture, loginUser, taskId);
+        pictureService.AiEditPictureAsync(pictureUpdateByAIRequest, picture, loginUser, taskId);
+        return ResultUtils.success(taskId);
+    }
+
+    /**
+     * 使用 AI 创建图片（异步）
+     */
+    @PostMapping("/ai/create")
+    public BaseResponse<String> AiCreatePicture(@RequestBody PictureCreateByAIRequest pictureCreateByAIRequest,
+                                                HttpServletRequest request) {
+        ThrowUtils.throwIf(pictureCreateByAIRequest == null, StatusCode.PARAMS_ERROR);
+        String description = pictureCreateByAIRequest.getDescription();
+        if (StrUtil.isBlank(description)) {
+            throw new BusinessException(StatusCode.PARAMS_ERROR, "图片描述不能为空");
+        }
+
+        User loginUser = userService.getLoginUser(request);
+
+        // 检查任务数量限制
+        try {
+            pictureService.checkAndIncrementTaskCount(ImageOperation.CREATE);
+        } catch (BusinessException e) {
+            return new BaseResponse<>(e.getCode(), null, e.getMessage());
+        }
+
+        String taskId = aiTaskManager.createTask(description);
+        pictureService.AiCreatePictureAsync(pictureCreateByAIRequest, loginUser, taskId);
         return ResultUtils.success(taskId);
     }
 
@@ -477,7 +473,7 @@ public class PictureController {
      */
     @PostMapping("/upload/avatar")
     public BaseResponse<String> uploadAvatar(@RequestPart("file") MultipartFile multipartFile,
-                                              HttpServletRequest request) {
+                                             HttpServletRequest request) {
         ThrowUtils.throwIf(multipartFile == null, StatusCode.PARAMS_ERROR);
         User loginUser = userService.getLoginUser(request);
         String avatar = pictureService.uploadAvatar(multipartFile, loginUser);

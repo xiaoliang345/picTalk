@@ -43,7 +43,7 @@ mybatis-plus:
       logic-not-delete-value: 0
 
 knife4j:
-  enable: false
+  enable: true
   openapi:
     title: 接口文档
     version: 1.0

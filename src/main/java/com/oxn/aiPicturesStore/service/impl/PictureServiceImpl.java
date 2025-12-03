@@ -5,13 +5,11 @@ import cn.hutool.core.util.ObjUtil;
 import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
-import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.baomidou.mybatisplus.extension.conditions.update.LambdaUpdateChainWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-import com.oxn.aiPicturesStore.common.BaseResponse;
 import com.oxn.aiPicturesStore.config.CosClientConfig;
-import com.oxn.aiPicturesStore.constant.PictureConstant;
+import com.oxn.aiPicturesStore.enums.ImageOperation;
 import com.oxn.aiPicturesStore.enums.PictureReviewStatusEnum;
 import com.oxn.aiPicturesStore.enums.StatusCode;
 import com.oxn.aiPicturesStore.enums.TaskStatus;
@@ -19,7 +17,6 @@ import com.oxn.aiPicturesStore.exception.BusinessException;
 import com.oxn.aiPicturesStore.exception.ThrowUtils;
 import com.oxn.aiPicturesStore.manager.AiTaskManager;
 import com.oxn.aiPicturesStore.manager.CosManager;
-import com.oxn.aiPicturesStore.manager.FileManager;
 import com.oxn.aiPicturesStore.manager.ImageEditService;
 import com.oxn.aiPicturesStore.manager.upload.FilePictureUpload;
 import com.oxn.aiPicturesStore.manager.upload.PictureUploadTemplate;
@@ -36,7 +33,6 @@ import com.oxn.aiPicturesStore.service.PictureService;
 import com.oxn.aiPicturesStore.service.SpaceService;
 import com.oxn.aiPicturesStore.service.UserService;
 import com.oxn.aiPicturesStore.utils.HexColorSimilarityUtil;
-import org.bouncycastle.asn1.cms.PasswordRecipientInfo;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -45,10 +41,10 @@ import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.core.ValueOperations;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionTemplate;
-import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.annotation.Resource;
@@ -101,6 +97,9 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
     @Qualifier("taskExecutor")
     private Executor taskExecutor;
 
+    @Autowired
+    private StringRedisTemplate stringRedisTemplate;
+
     @Value("${nginx.proxyUrl}")
     private String ImageAccessPrefix;
 
@@ -143,10 +142,9 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
         picture.setThumbnailUrl(uploadPictureResult.getThumbnailUrl());
         picture.setPreviewUrl(uploadPictureResult.getPreviewUrl());
         //如果是修改图片，名称使用之前图片的名称
-        if(oldPicture!=null&&StrUtil.isNotEmpty(oldPicture.getName())){
+        if (oldPicture != null && StrUtil.isNotEmpty(oldPicture.getName())) {
             picture.setName(oldPicture.getName());
-        }
-        else{
+        } else {
             //如果指定了文件名前缀则使用，没有的话就使用从URL中解析的名称
             if (StrUtil.isNotBlank(pictureUploadRequest.getPicName())) {
                 picture.setName(pictureUploadRequest.getPicName());
@@ -182,7 +180,7 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
                         .eq(Space::getId, spaceId)
                         .setSql("totalCount=totalCount+" + 1)
                         .setSql("totalSize=totalSize+" + picture.getPicSize());
-                if(oldPicture!=null){
+                if (oldPicture != null) {
                     updateChainWrapper.setSql("totalCount=totalCount-" + 1)
                             .setSql("totalSize=totalSize-" + oldPicture.getPicSize());
                 }
@@ -494,25 +492,27 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
 
     @Override
     public String pictureEditByAI(PictureUpdateByAIRequest pictureUpdateByAIRequest, Picture picture, User loginUser) {
-        //睡眠三秒
-        /*try {
-            Thread.sleep(3000);
-        }catch (Exception e){
-            e.printStackTrace();
-        }
-        String newPictureUrl = "https://www.codefather.cn/logo.png";*/
         String description = pictureUpdateByAIRequest.getDescription();
         //将服务器转发的图片地址转换为存储桶的图片地址
-        String url = picture.getUrl().replace(ImageAccessPrefix,cosClientConfig.getHost());
+        String url = picture.getUrl().replace(ImageAccessPrefix, cosClientConfig.getHost());
         String newPictureUrl = imageEditService.editImage(url, description);
-        /*PictureUploadRequest pictureUploadRequest = new PictureUploadRequest();
-        pictureUploadRequest.setId(pictureUpdateByAIRequest.getId());
-        Long spaceId = picture.getSpaceId();
-        if (ObjUtil.isNotEmpty(spaceId)) {
-            pictureUploadRequest.setSpaceId(picture.getId());
-        }
-        this.uploadPicture(newPictureUrl, pictureUploadRequest, loginUser);*/
         return newPictureUrl;
+    }
+
+    @Override
+    public String pictureCreateByAI(PictureCreateByAIRequest pictureCreateByAIRequest, User loginUser) {
+        String description = pictureCreateByAIRequest.getDescription();
+        //将服务器转发的图片地址转换为存储桶的图片地址
+        /*String imgUrl = imageEditService.createImage(description);
+        return imgUrl;*/
+
+        String imgUrl="https://ai-pictures-store-1328310172.cos.ap-chongqing.myqcloud.com/public/1916782685337497602/2025-10-17_YpGBS1OtpDXweDr1.png";
+        try{
+            Thread.sleep(5000);
+        }catch (InterruptedException e){
+            e.printStackTrace();
+        }
+        return imgUrl.replace(ImageAccessPrefix, cosClientConfig.getHost());
     }
 
     @Override
@@ -535,10 +535,8 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
     }
 
     @Override
-    public void AiEditPicture(PictureUpdateByAIRequest pictureUpdateByAIRequest, Picture picture, User loginUser, String taskId) {
-
-
-        // 2. 提交异步任务处理（使用线程池）
+    public void AiEditPictureAsync(PictureUpdateByAIRequest pictureUpdateByAIRequest, Picture picture, User loginUser, String taskId) {
+        // 提交异步任务处理（使用线程池）
         CompletableFuture.runAsync(() -> {
             try {
                 aiTaskManager.updateTask(taskId, TaskStatus.PROCESSING, null, null);
@@ -546,10 +544,41 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
                 String newImageUrl = this.pictureEditByAI(pictureUpdateByAIRequest, picture, loginUser);
                 aiTaskManager.updateTask(taskId, TaskStatus.SUCCESS, newImageUrl, null);
             } catch (Exception e) {
+                // 任务失败，减去任务计数
+                ValueOperations<String, String> valueOperations = stringRedisTemplate.opsForValue();
+                String taskCountStr = valueOperations.get("task_count"+ImageOperation.EDIT.getStatus());
+                long l = Long.parseLong(taskCountStr);
+                if (l > 0) {
+                    stringRedisTemplate.opsForValue().decrement("task_count"+ImageOperation.EDIT.getStatus());
+                }
                 aiTaskManager.updateTask(taskId, TaskStatus.FAILED, null, e.getMessage());
             }
         }, taskExecutor); // 使用自定义线程池，不要用默认的
     }
+
+    @Override
+    public void AiCreatePictureAsync(PictureCreateByAIRequest pictureCreateByAIRequest, User loginUser, String taskId) {
+        // 提交异步任务处理（使用线程池）
+        CompletableFuture.runAsync(() -> {
+            try {
+                aiTaskManager.updateTask(taskId, TaskStatus.PROCESSING, null, null);
+                // 调用 AI 服务生成新图片
+                String newImageUrl = this.pictureCreateByAI(pictureCreateByAIRequest, loginUser);
+
+                aiTaskManager.updateTask(taskId, TaskStatus.SUCCESS, newImageUrl, null);
+            } catch (Exception e) {
+                // 任务失败，减去任务计数
+                ValueOperations<String, String> valueOperations = stringRedisTemplate.opsForValue();
+                String taskCountStr = valueOperations.get("task_count"+ImageOperation.CREATE.getStatus());
+                long l = Long.parseLong(taskCountStr);
+                if (l > 0) {
+                    stringRedisTemplate.opsForValue().decrement("task_count"+ImageOperation.CREATE.getStatus());
+                }
+                aiTaskManager.updateTask(taskId, TaskStatus.FAILED, null, e.getMessage());
+            }
+        }, taskExecutor);
+    }
+
 
     @Override
     public String uploadAvatar(MultipartFile multipartFile, User loginUser) {
@@ -582,6 +611,35 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
             throw new BusinessException(StatusCode.OPERATION_ERROR, "名称解析错误");
         }
     }
+
+
+    @Override
+    public void checkAndIncrementTaskCount(ImageOperation imageOperation) {
+        ValueOperations<String, String> valueOperations = stringRedisTemplate.opsForValue();
+        String taskCountStr = valueOperations.get("task_count" + imageOperation.getStatus());
+        // 获取过期时间
+        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime endOfDay = now.toLocalDate().atTime(23, 59, 59);
+        long between = ChronoUnit.SECONDS.between(now, endOfDay);
+        // 判断缓存是否存在
+        if (StrUtil.isBlank(taskCountStr)) {
+            valueOperations.set("task_count" + imageOperation.getStatus(), "1", between, TimeUnit.SECONDS);
+        } else {
+            long taskCount = Long.parseLong(taskCountStr);
+            if (taskCount >= 7) {
+                throw new BusinessException(StatusCode.OPERATION_ERROR, "任务数量已达上限");
+            }
+            Long ttl = stringRedisTemplate.getExpire("task_count" + imageOperation.getStatus(), TimeUnit.SECONDS);
+            //判断时间是否过期
+            if (ttl < 0) {
+                valueOperations.set("task_count" + imageOperation.getStatus(), "1", between, TimeUnit.SECONDS);
+            } else {
+                taskCount++;
+                valueOperations.set("task_count" + imageOperation.getStatus(), String.valueOf(taskCount), between, TimeUnit.SECONDS);
+            }
+        }
+    }
+
 
 }
 

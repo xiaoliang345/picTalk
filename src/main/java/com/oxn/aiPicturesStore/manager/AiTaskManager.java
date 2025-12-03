@@ -1,7 +1,7 @@
 package com.oxn.aiPicturesStore.manager;
 
 import com.oxn.aiPicturesStore.enums.TaskStatus;
-import com.oxn.aiPicturesStore.model.dto.picture.AiImageTaskResult;
+import com.oxn.aiPicturesStore.model.vo.AiImageTaskResult;
 import org.springframework.stereotype.Component;
 
 import java.util.Map;
