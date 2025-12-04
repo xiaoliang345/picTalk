@@ -118,7 +118,7 @@ public class PostServiceImpl extends ServiceImpl<PostMapper, Post> implements Po
                             img.setPostId(postId);
                             img.setImageUrl(map.get("url"));
                             img.setThumbnailUrl(map.get("thumbnailUrl"));
-                            img.setThumbnailUrl(map.get("previewlUrl"));
+                            img.setPreviewUrl(map.get("previewUrl"));
                             return img;
                         })
                         .collect(Collectors.toList());
