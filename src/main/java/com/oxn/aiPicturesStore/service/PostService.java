@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.oxn.aiPicturesStore.common.PageRequest;
+import com.oxn.aiPicturesStore.model.dto.post.CreatePostDTO;
 import com.oxn.aiPicturesStore.model.dto.post.PostQueryRequest;
 import com.oxn.aiPicturesStore.model.entity.Picture;
 import com.oxn.aiPicturesStore.model.entity.Post;
@@ -22,12 +23,10 @@ public interface PostService extends IService<Post> {
      * 创建帖子
      *
      * @param userId     用户ID
-     * @param title      标题
-     * @param content    内容
-     * @param imageUrls  图片URL列表
+     * @param createPostDTO
      * @return 创建的帖子
      */
-    PostVO createPost(Long userId, String title, String content, List<Map<String, String>> imageUrls);
+    PostVO createPost(Long userId, CreatePostDTO createPostDTO);
 
     /**
      * 更新帖子

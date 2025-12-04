@@ -52,10 +52,10 @@ public class ForumController {
     private PostImageService postImageService;
 
     @PostMapping("/post")
-    public BaseResponse<PostVO> createPost(@RequestBody CreatePostDTO dto, HttpServletRequest request) {
+    public BaseResponse<PostVO> createPost(@RequestBody CreatePostDTO createPostDTO, HttpServletRequest request) {
         User loginUser = userService.getLoginUser(request);
         Long userId = loginUser.getId(); // 从 token/session 获取
-        PostVO post = postService.createPost(userId, dto.getTitle(), dto.getContent(), dto.getImageUrls());
+        PostVO post = postService.createPost(userId, createPostDTO);
         return ResultUtils.success(post);
     }
 

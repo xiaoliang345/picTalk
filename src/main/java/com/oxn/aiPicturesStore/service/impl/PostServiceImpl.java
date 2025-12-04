@@ -1,6 +1,7 @@
 package com.oxn.aiPicturesStore.service.impl;
 
 import cn.hutool.core.util.ObjUtil;
+import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
@@ -9,11 +10,13 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.oxn.aiPicturesStore.common.PageRequest;
 import com.oxn.aiPicturesStore.enums.StatusCode;
 import com.oxn.aiPicturesStore.exception.BusinessException;
+import com.oxn.aiPicturesStore.exception.ThrowUtils;
 import com.oxn.aiPicturesStore.mapper.CommentMapper;
 import com.oxn.aiPicturesStore.mapper.PostImageMapper;
 import com.oxn.aiPicturesStore.mapper.PostMapper;
 import com.oxn.aiPicturesStore.mapper.UserLikeMapper;
 import com.oxn.aiPicturesStore.mapper.UserMapper;
+import com.oxn.aiPicturesStore.model.dto.post.CreatePostDTO;
 import com.oxn.aiPicturesStore.model.dto.post.PostQueryRequest;
 import com.oxn.aiPicturesStore.model.entity.Comment;
 import com.oxn.aiPicturesStore.model.entity.Post;
@@ -38,7 +41,7 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
-public class PostServiceImpl extends ServiceImpl<PostMapper, Post>  implements PostService  {
+public class PostServiceImpl extends ServiceImpl<PostMapper, Post> implements PostService {
 
     @Autowired
     private UserService userService;
@@ -50,7 +53,11 @@ public class PostServiceImpl extends ServiceImpl<PostMapper, Post>  implements P
     private final UserMapper userMapper;
 
     @Transactional
-    public PostVO createPost(Long userId, String title, String content, List<Map<String, String>> imageUrls) {
+    public PostVO createPost(Long userId, CreatePostDTO createPostDTO) {
+        String title = createPostDTO.getTitle();
+        String content = createPostDTO.getContent();
+        ThrowUtils.throwIf(StrUtil.isBlank(title) || StrUtil.isBlank(content), StatusCode.PARAMS_ERROR, "标题/内容不能为空");
+        List<Map<String, String>> imageUrls = createPostDTO.getImageUrls();
         Post post = new Post();
         post.setUserId(userId);
         post.setTitle(title);
@@ -66,6 +73,7 @@ public class PostServiceImpl extends ServiceImpl<PostMapper, Post>  implements P
                         img.setPostId(post.getId());
                         img.setImageUrl(map.get("url"));
                         img.setThumbnailUrl(map.get("thumbnailUrl"));
+                        img.setPreviewUrl(map.get("previewUrl"));
                         return img;
                     })
                     .collect(Collectors.toList());
@@ -86,8 +94,8 @@ public class PostServiceImpl extends ServiceImpl<PostMapper, Post>  implements P
         }
 
         // 检查是否是帖子作者（只有作者可以编辑自己的帖子）
-        User loginUser= userService.getById(userId);
-        if (!post.getUserId().equals(userId)&&!userService.isAdmin(loginUser)) {
+        User loginUser = userService.getById(userId);
+        if (!post.getUserId().equals(userId) && !userService.isAdmin(loginUser)) {
             throw new RuntimeException("没有权限编辑该帖子");
         }
 
@@ -140,6 +148,7 @@ public class PostServiceImpl extends ServiceImpl<PostMapper, Post>  implements P
             Map<String, String> imgMap = new HashMap<>();
             imgMap.put("url", postImage.getImageUrl());
             imgMap.put("thumbnailUrl", postImage.getThumbnailUrl());
+            imgMap.put("previewUrl", postImage.getPreviewUrl());
             return imgMap;
         }).collect(Collectors.toList());
 
@@ -286,13 +295,13 @@ public class PostServiceImpl extends ServiceImpl<PostMapper, Post>  implements P
         }
         // 根据用户ID查询
         Long userId = pageRequest.getUserId();
-        if(ObjUtil.isNotEmpty(userId)){
+        if (ObjUtil.isNotEmpty(userId)) {
             User user = userService.getById(userId);
-            if(user==null){
-                throw new BusinessException(StatusCode.OPERATION_ERROR,"用户不存在");
+            if (user == null) {
+                throw new BusinessException(StatusCode.OPERATION_ERROR, "用户不存在");
             }
             User loginUser = userService.getLoginUser(request);
-            if(!loginUser.getId().equals(userId)&&!userService.isAdmin(loginUser)){
+            if (!loginUser.getId().equals(userId) && !userService.isAdmin(loginUser)) {
                 throw new BusinessException(StatusCode.NO_AUTH_ERROR);
             }
             queryWrapper.eq("userId", userId);
@@ -323,10 +332,10 @@ public class PostServiceImpl extends ServiceImpl<PostMapper, Post>  implements P
             List<PostImage> postImages = postImageMapper.selectList(imageQueryWrapper);
 
             // 按post_id分组图片
-            Map<Long, List<Map<String,String>>> imageMap = postImages.stream()
+            Map<Long, List<Map<String, String>>> imageMap = postImages.stream()
                     .collect(Collectors.groupingBy(
                             PostImage::getPostId,
-                            Collectors.mapping(image->{
+                            Collectors.mapping(image -> {
                                 Map<String, String> imageUrl = new HashMap<>();
                                 imageUrl.put("imageUrl", image.getImageUrl());
                                 imageUrl.put("thumbnailUrl", image.getThumbnailUrl());
@@ -453,7 +462,7 @@ public class PostServiceImpl extends ServiceImpl<PostMapper, Post>  implements P
 
         // 检查是否是帖子作者（只有作者可以删除自己的帖子）
         User loginUser = userService.getById(userId);
-        if (!post.getUserId().equals(userId)&&!userService.isAdmin(loginUser)) {
+        if (!post.getUserId().equals(userId) && !userService.isAdmin(loginUser)) {
             throw new RuntimeException("没有权限删除该帖子");
         }
 
@@ -469,14 +478,14 @@ public class PostServiceImpl extends ServiceImpl<PostMapper, Post>  implements P
         // 删除帖子
         postMapper.deleteById(postId);
     }
-    
+
     @Override
     public Boolean setTop(Long postId, Integer isTop) {
         Post post = postMapper.selectById(postId);
         if (post == null) {
             throw new BusinessException(StatusCode.NOT_FOUND_ERROR, "帖子不存在");
         }
-        
+
         post.setIsTop(isTop);
         return postMapper.updateById(post) > 0;
     }

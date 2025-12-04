@@ -91,13 +91,14 @@ aiPicturesStore/
 - 空间容量控制
 
 ### AI 模块
+- AI 图片创建
 - AI 图片编辑
 - 异步任务处理
 
 ## 配置要求
 
 - JDK 17 或以上版本
-- MySQL 8.0 或以上版本
+- MySQL 5.7 或以上版本
 - Redis 5.0 或以上版本
 - Maven 3.6 或以上版本
 
@@ -110,7 +111,7 @@ aiPicturesStore/
    ```
 
 2. **创建数据库并导入初始化脚本**  
-   创建名为 `ai_pictures_store` 的 MySQL 数据库，并执行项目中的 SQL 初始化脚本（通常位于 `src/main/resources/sql/` 目录）。
+   创建名为 `picTalk` 的 MySQL 数据库，并执行项目中的 SQL 初始化脚本。
 
 3. **新建环境配置文件**  
    在 `src/main/resources/` 目录下，分别创建以下两个配置文件：
@@ -125,7 +126,7 @@ aiPicturesStore/
    spring:
      datasource:
        driver-class-name: com.mysql.cj.jdbc.Driver
-       url: jdbc:mysql://localhost:3306/ai_pictures_store
+       url: jdbc:mysql://localhost:3306/picTalk
        username: your_db_username      # 替换为你的数据库用户名
        password: your_db_password      # 替换为你的数据库密码
 
@@ -139,9 +140,14 @@ aiPicturesStore/
 
    # DashScope 配置阿里百炼
    dashscope:
-      apiKey:  # 替换为你的DashScope API Key
-      apiUrl:  
+      apiKey: your_dashscope_api_key  # 替换为你的DashScope API Key
+      apiUrl: https://dashscope.aliyuncs.com/api/v1/services/aigc/multimodal-generation/generation
    ```
+
+   > ⚠️ **重要安全提示**：  
+   > - 请勿将真实的敏感信息（数据库密码、API Key、密钥等）提交到版本控制系统
+   > - 确保 `application-local.yml` 和 `application-prod.yml` 已添加到 `.gitignore`
+   > - 在团队合作中，通过环境变量或密钥管理服务来传递敏感配置信息
 
    > 💡 提示：  
    > - `application-local.yml` 用于本地开发，可连接本地 MySQL 和测试用 COS；  

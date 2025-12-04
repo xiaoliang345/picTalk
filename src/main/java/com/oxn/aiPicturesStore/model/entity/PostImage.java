@@ -17,5 +17,7 @@ public class PostImage {
     private String imageUrl;
     @TableField("thumbnail_url")
     private String  thumbnailUrl;
+    @TableField("preview_url")
+    private String  previewUrl;
     private Integer sort = 0;
 }

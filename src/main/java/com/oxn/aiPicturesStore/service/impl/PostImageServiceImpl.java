@@ -31,6 +31,7 @@ public class PostImageServiceImpl extends ServiceImpl<PostImageMapper, PostImage
         HashMap<String, String> pictureUrlMap = new HashMap<>();
         pictureUrlMap.put("url", uploadPictureResult.getUrl());
         pictureUrlMap.put("thumbnailUrl", uploadPictureResult.getThumbnailUrl());
+        pictureUrlMap.put("previewUrl", uploadPictureResult.getPreviewUrl());
         return pictureUrlMap;
     }
 }

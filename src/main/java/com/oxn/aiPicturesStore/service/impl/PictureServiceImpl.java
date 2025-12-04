@@ -503,16 +503,16 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
     public String pictureCreateByAI(PictureCreateByAIRequest pictureCreateByAIRequest, User loginUser) {
         String description = pictureCreateByAIRequest.getDescription();
         //将服务器转发的图片地址转换为存储桶的图片地址
-        /*String imgUrl = imageEditService.createImage(description);
-        return imgUrl;*/
+        String imgUrl = imageEditService.createImage(description);
+        return imgUrl;
 
-        String imgUrl="https://ai-pictures-store-1328310172.cos.ap-chongqing.myqcloud.com/public/1916782685337497602/2025-10-17_YpGBS1OtpDXweDr1.png";
+        /*String imgUrl="https://ai-pictures-store-1328310172.cos.ap-chongqing.myqcloud.com/public/1969752947225530369/0UsAd.png";
         try{
             Thread.sleep(5000);
         }catch (InterruptedException e){
             e.printStackTrace();
         }
-        return imgUrl.replace(ImageAccessPrefix, cosClientConfig.getHost());
+        return imgUrl.replace(ImageAccessPrefix, cosClientConfig.getHost());*/
     }
 
     @Override
