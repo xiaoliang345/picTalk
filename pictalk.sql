@@ -5,13 +5,13 @@
  Source Server Type    : MySQL
  Source Server Version : 50744
  Source Host           : localhost:3306
- Source Schema         : ai_pictures_store
+ Source Schema         : pictalk
 
  Target Server Type    : MySQL
  Target Server Version : 50744
  File Encoding         : 65001
 
- Date: 16/11/2025 14:49:02
+ Date: 04/12/2025 19:47:05
 */
 
 SET NAMES utf8mb4;
@@ -33,7 +33,7 @@ CREATE TABLE `comment`  (
   PRIMARY KEY (`id`) USING BTREE,
   INDEX `idx_post_id`(`post_id`) USING BTREE,
   INDEX `idx_parent_id`(`parent_id`) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 7 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 7 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of comment
@@ -100,7 +100,7 @@ CREATE TABLE `picture`  (
   INDEX `idx_userId`(`userId`) USING BTREE,
   INDEX `idx_reviewStatus`(`reviewStatus`) USING BTREE,
   INDEX `idx_spaceId`(`spaceId`) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 1988838980353355779 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '图片' ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 1996512315733721090 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '图片' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of picture
@@ -141,6 +141,11 @@ INSERT INTO `picture` VALUES (1988416211769741313, 'http://www.oxncloud.top/cos/
 INSERT INTO `picture` VALUES (1988796655954681858, 'http://www.oxncloud.top/cos/public/1969752947225530369/epXrv.jpeg', '182F7B1ECDF1D77F9B6C76C809068193', NULL, '', NULL, 179276, 1242, 700, 1.77, 'jpeg', 1969752947225530369, '2025-11-13 10:30:47', '2025-11-13 10:30:50', '2025-11-13 10:30:50', 0, 1, '管理员自动过审', 1969752947225530369, '2025-11-13 10:30:50', 'http://www.oxncloud.top/cos/public/1969752947225530369/epXrv.webp', 1988447153120968706, '0xa1c0df', 'http://www.oxncloud.top/cos/public/1969752947225530369/epXrv.webp');
 INSERT INTO `picture` VALUES (1988799611240275970, 'http://www.oxncloud.top/cos/public/1969752947225530369/ukfct.jpeg', '182F7B1ECDF1D77F9B6C76C809068193', NULL, '', NULL, 130820, 340, 340, 1, 'jpeg', 1969752947225530369, '2025-11-13 10:42:32', '2025-11-13 12:19:17', '2025-11-13 12:19:16', 0, 1, '管理员自动过审', 1969752947225530369, '2025-11-13 12:19:17', 'http://www.oxncloud.top/cos/public/1969752947225530369/ukfct.webp', 1988447153120968706, '0xe0e085', 'http://www.oxncloud.top/cos/public/1969752947225530369/ukfct.webp');
 INSERT INTO `picture` VALUES (1988838980353355778, 'http://www.oxncloud.top/cos/public/1969752947225530369/X4uhE.png', '【哲风壁纸】AI原神-原神', NULL, NULL, NULL, 2051388, 3600, 2400, 1.5, 'png', 1969752947225530369, '2025-11-13 13:18:58', '2025-11-13 13:18:58', '2025-11-13 13:18:58', 0, 1, '管理员自动过审', 1969752947225530369, '2025-11-13 13:18:58', 'http://www.oxncloud.top/cos/public/1969752947225530369/X4uhE_thumbnailpng', NULL, '0x000', 'http://www.oxncloud.top/cos/public/1969752947225530369/X4uhE.webp');
+INSERT INTO `picture` VALUES (1996493911895420929, 'http://www.oxncloud.top/cos/public/1969752947225530369/lUI9e.png', '2025-10-17_YpGBS1OtpDXweDr1', NULL, NULL, NULL, 1784645, 3840, 2160, 1.78, 'png', 1969752947225530369, '2025-12-04 16:16:56', '2025-12-04 16:16:56', '2025-12-04 16:25:26', 1, 1, '管理员自动过审', 1969752947225530369, '2025-12-04 16:16:56', 'http://www.oxncloud.top/cos/public/1969752947225530369/lUI9e_thumbnailpng', NULL, '0x7c5d3f', 'http://www.oxncloud.top/cos/public/1969752947225530369/lUI9e.webp');
+INSERT INTO `picture` VALUES (1996494314603130882, 'http://www.oxncloud.top/cos/public/1969752947225530369/Hix6D.png', '2025-10-17_YpGBS1OtpDXweDr1', NULL, NULL, NULL, 1784645, 3840, 2160, 1.78, 'png', 1969752947225530369, '2025-12-04 16:18:32', '2025-12-04 16:18:32', '2025-12-04 16:25:25', 1, 1, '管理员自动过审', 1969752947225530369, '2025-12-04 16:18:32', 'http://www.oxncloud.top/cos/public/1969752947225530369/Hix6D_thumbnailpng', NULL, '0x7c5d3f', 'http://www.oxncloud.top/cos/public/1969752947225530369/Hix6D.webp');
+INSERT INTO `picture` VALUES (1996495868680859649, 'http://www.oxncloud.top/cos/public/1969752947225530369/XrSHL.jpeg', '7fafb63d-25c6-48f3-a5ab-fed20dccb44b-1', NULL, NULL, NULL, 1674250, 1664, 928, 1.79, 'jpeg', 1969752947225530369, '2025-12-04 16:24:42', '2025-12-04 16:24:42', '2025-12-04 16:25:23', 1, 1, '管理员自动过审', 1969752947225530369, '2025-12-04 16:24:43', 'http://www.oxncloud.top/cos/public/1969752947225530369/XrSHL_thumbnailjpeg', NULL, '0x6d6f57', 'http://www.oxncloud.top/cos/public/1969752947225530369/XrSHL.webp');
+INSERT INTO `picture` VALUES (1996495951379951617, 'http://www.oxncloud.top/cos/public/1969752947225530369/KkMGy.png', '2025-10-17_YpGBS1OtpDXweDr1', NULL, '', NULL, 1784645, 3840, 2160, 1.78, 'png', 1969752947225530369, '2025-12-04 16:25:02', '2025-12-04 16:25:05', '2025-12-04 16:25:20', 1, 1, '管理员自动过审', 1969752947225530369, '2025-12-04 16:25:05', 'http://www.oxncloud.top/cos/public/1969752947225530369/KkMGy_thumbnailpng', NULL, '0x7c5d3f', 'http://www.oxncloud.top/cos/public/1969752947225530369/KkMGy.webp');
+INSERT INTO `picture` VALUES (1996512315733721089, 'http://www.oxncloud.top/cos/public/1969752947225530369/s6cty.jpeg', '雷电将军-像素', '哈哈哈', '电脑壁纸', '[\"动漫\"]', 1675950, 1664, 928, 1.79, 'jpeg', 1969752947225530369, '2025-12-04 17:30:04', '2025-12-04 17:30:32', '2025-12-04 17:30:31', 0, 1, '管理员自动过审', 1969752947225530369, '2025-12-04 17:30:32', 'http://www.oxncloud.top/cos/public/1969752947225530369/s6cty_thumbnailjpeg', NULL, '0x808053', 'http://www.oxncloud.top/cos/public/1969752947225530369/s6cty.webp');
 
 -- ----------------------------
 -- Table structure for post
@@ -157,7 +162,7 @@ CREATE TABLE `post`  (
   `is_top` int(11) NULL DEFAULT NULL COMMENT '是否置顶',
   PRIMARY KEY (`id`) USING BTREE,
   INDEX `idx_user_id`(`userId`) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 20 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 27 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of post
@@ -165,6 +170,13 @@ CREATE TABLE `post`  (
 INSERT INTO `post` VALUES (14, 1969752947225530369, '算法赛1', '啊啊发放2', '2025-11-06 22:38:25', '2025-11-10 16:51:07', 0, 1);
 INSERT INTO `post` VALUES (15, 1969752947225530369, '周五1', '马上放假😍2', '2025-11-07 09:23:48', '2025-11-10 20:19:19', 5, 0);
 INSERT INTO `post` VALUES (19, 1969752947225530369, '第一条帖子', '哈哈哈哈哈😁', '2025-11-06 21:12:14', '2025-11-10 20:19:19', 5, 0);
+INSERT INTO `post` VALUES (20, 1969752947225530369, '1', '2', '2025-12-04 16:36:47', '2025-12-04 16:36:47', 0, 0);
+INSERT INTO `post` VALUES (21, 1969752947225530369, '1', '2', '2025-12-04 16:39:21', '2025-12-04 16:54:45', 0, 0);
+INSERT INTO `post` VALUES (22, 1969752947225530369, '1', '2', '2025-12-04 17:02:52', '2025-12-04 17:02:52', 0, 0);
+INSERT INTO `post` VALUES (23, 1969752947225530369, '1', '2', '2025-12-04 17:04:11', '2025-12-04 17:04:11', 0, 0);
+INSERT INTO `post` VALUES (24, 1969752947225530369, '1', '2', '2025-12-04 17:04:33', '2025-12-04 17:04:33', 0, 0);
+INSERT INTO `post` VALUES (25, 1969752947225530369, '1', '2', '2025-12-04 17:05:08', '2025-12-04 17:05:08', 0, 0);
+INSERT INTO `post` VALUES (26, 1969752947225530369, '1', '2', '2025-12-04 17:13:29', '2025-12-04 17:13:29', 0, 0);
 
 -- ----------------------------
 -- Table structure for post_image
@@ -176,21 +188,30 @@ CREATE TABLE `post_image`  (
   `image_url` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL COMMENT '图片URL',
   `sort` int(11) NULL DEFAULT 0 COMMENT '排序',
   `thumbnail_url` varchar(200) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL,
+  `preview_url` varchar(200) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL COMMENT '预览图',
   PRIMARY KEY (`id`) USING BTREE,
   INDEX `idx_post_id`(`post_id`) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 33 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 42 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of post_image
 -- ----------------------------
-INSERT INTO `post_image` VALUES (18, 14, 'https://ai-pictures-store-1328310172.cos.ap-chongqing.myqcloud.com/post/S4OKY.png', 0, 'https://ai-pictures-store-1328310172.cos.ap-chongqing.myqcloud.com/post/S4OKY_thumbnailpng');
-INSERT INTO `post_image` VALUES (19, 14, 'https://ai-pictures-store-1328310172.cos.ap-chongqing.myqcloud.com/post/mPWh8.png', 0, 'https://ai-pictures-store-1328310172.cos.ap-chongqing.myqcloud.com/post/mPWh8.webp');
-INSERT INTO `post_image` VALUES (20, 14, 'https://ai-pictures-store-1328310172.cos.ap-chongqing.myqcloud.com/post/sW3E9.png', 0, 'https://ai-pictures-store-1328310172.cos.ap-chongqing.myqcloud.com/post/sW3E9_thumbnailpng');
-INSERT INTO `post_image` VALUES (21, 14, 'https://ai-pictures-store-1328310172.cos.ap-chongqing.myqcloud.com/post/sxLi3.png', 0, 'https://ai-pictures-store-1328310172.cos.ap-chongqing.myqcloud.com/post/sxLi3_thumbnailpng');
-INSERT INTO `post_image` VALUES (29, 15, 'https://ai-pictures-store-1328310172.cos.ap-chongqing.myqcloud.com/post/H1sb9.png', 0, 'https://ai-pictures-store-1328310172.cos.ap-chongqing.myqcloud.com/post/H1sb9_thumbnailpng');
-INSERT INTO `post_image` VALUES (30, 15, 'https://ai-pictures-store-1328310172.cos.ap-chongqing.myqcloud.com/post/2y4Hn.png', 0, 'https://ai-pictures-store-1328310172.cos.ap-chongqing.myqcloud.com/post/2y4Hn_thumbnailpng');
-INSERT INTO `post_image` VALUES (31, 15, 'https://ai-pictures-store-1328310172.cos.ap-chongqing.myqcloud.com/post/GEBzi.jpeg', 0, 'https://ai-pictures-store-1328310172.cos.ap-chongqing.myqcloud.com/post/GEBzi_thumbnailjpeg');
-INSERT INTO `post_image` VALUES (32, 15, 'https://ai-pictures-store-1328310172.cos.ap-chongqing.myqcloud.com/post/L0s5Q.jpeg', 0, 'https://ai-pictures-store-1328310172.cos.ap-chongqing.myqcloud.com/post/L0s5Q_thumbnailjpeg');
+INSERT INTO `post_image` VALUES (18, 14, 'https://ai-pictures-store-1328310172.cos.ap-chongqing.myqcloud.com/post/S4OKY.png', 0, 'https://ai-pictures-store-1328310172.cos.ap-chongqing.myqcloud.com/post/S4OKY_thumbnailpng', NULL);
+INSERT INTO `post_image` VALUES (19, 14, 'https://ai-pictures-store-1328310172.cos.ap-chongqing.myqcloud.com/post/mPWh8.png', 0, 'https://ai-pictures-store-1328310172.cos.ap-chongqing.myqcloud.com/post/mPWh8.webp', NULL);
+INSERT INTO `post_image` VALUES (20, 14, 'https://ai-pictures-store-1328310172.cos.ap-chongqing.myqcloud.com/post/sW3E9.png', 0, 'https://ai-pictures-store-1328310172.cos.ap-chongqing.myqcloud.com/post/sW3E9_thumbnailpng', NULL);
+INSERT INTO `post_image` VALUES (21, 14, 'https://ai-pictures-store-1328310172.cos.ap-chongqing.myqcloud.com/post/sxLi3.png', 0, 'https://ai-pictures-store-1328310172.cos.ap-chongqing.myqcloud.com/post/sxLi3_thumbnailpng', NULL);
+INSERT INTO `post_image` VALUES (29, 15, 'https://ai-pictures-store-1328310172.cos.ap-chongqing.myqcloud.com/post/H1sb9.png', 0, 'https://ai-pictures-store-1328310172.cos.ap-chongqing.myqcloud.com/post/H1sb9_thumbnailpng', NULL);
+INSERT INTO `post_image` VALUES (30, 15, 'https://ai-pictures-store-1328310172.cos.ap-chongqing.myqcloud.com/post/2y4Hn.png', 0, 'https://ai-pictures-store-1328310172.cos.ap-chongqing.myqcloud.com/post/2y4Hn_thumbnailpng', NULL);
+INSERT INTO `post_image` VALUES (31, 15, 'https://ai-pictures-store-1328310172.cos.ap-chongqing.myqcloud.com/post/GEBzi.jpeg', 0, 'https://ai-pictures-store-1328310172.cos.ap-chongqing.myqcloud.com/post/GEBzi_thumbnailjpeg', NULL);
+INSERT INTO `post_image` VALUES (32, 15, 'https://ai-pictures-store-1328310172.cos.ap-chongqing.myqcloud.com/post/L0s5Q.jpeg', 0, 'https://ai-pictures-store-1328310172.cos.ap-chongqing.myqcloud.com/post/L0s5Q_thumbnailjpeg', NULL);
+INSERT INTO `post_image` VALUES (33, 20, 'http://www.oxncloud.top/cos/post/1BRQT.png', 0, 'http://www.oxncloud.top/cos/post/1BRQT_thumbnailpng', NULL);
+INSERT INTO `post_image` VALUES (35, 21, 'http://www.oxncloud.top/cos/post/zRcMn.png', 0, 'http://www.oxncloud.top/cos/post/zRcMn_thumbnailpng', NULL);
+INSERT INTO `post_image` VALUES (36, 21, 'http://www.oxncloud.top/cos/post/xl2qZ.png', 0, 'http://www.oxncloud.top/cos/post/xl2qZ_thumbnailpng', NULL);
+INSERT INTO `post_image` VALUES (37, 22, 'http://www.oxncloud.top/cos/post/EgcOH.png', 0, 'http://www.oxncloud.top/cos/post/EgcOH_thumbnailpng', NULL);
+INSERT INTO `post_image` VALUES (38, 23, 'http://www.oxncloud.top/cos/post/pFt45.png', 0, 'http://www.oxncloud.top/cos/post/pFt45_thumbnailpng', NULL);
+INSERT INTO `post_image` VALUES (39, 24, 'http://www.oxncloud.top/cos/post/ViXpH.png', 0, 'http://www.oxncloud.top/cos/post/ViXpH_thumbnailpng', NULL);
+INSERT INTO `post_image` VALUES (40, 25, 'http://www.oxncloud.top/cos/post/2NdAJ.png', 0, 'http://www.oxncloud.top/cos/post/2NdAJ_thumbnailpng', NULL);
+INSERT INTO `post_image` VALUES (41, 26, 'http://www.oxncloud.top/cos/post/lGCqt.png', 0, 'http://www.oxncloud.top/cos/post/lGCqt_thumbnailpng', 'http://www.oxncloud.top/cos/post/lGCqt.webp');
 
 -- ----------------------------
 -- Table structure for space
@@ -215,7 +236,7 @@ CREATE TABLE `space`  (
   INDEX `idx_spaceName`(`spaceName`) USING BTREE,
   INDEX `idx_spaceLevel`(`spaceLevel`) USING BTREE,
   INDEX `idx_spaceType`(`spaceType`) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 1988447153120968707 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '空间' ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 1988447153120968707 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '空间' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of space
@@ -238,7 +259,7 @@ CREATE TABLE `space_user`  (
   UNIQUE INDEX `uk_spaceId_userId`(`spaceId`, `userId`) USING BTREE,
   INDEX `idx_spaceId`(`spaceId`) USING BTREE,
   INDEX `idx_userId`(`userId`) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 23 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '空间用户关联' ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 23 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '空间用户关联' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of space_user
@@ -265,7 +286,7 @@ CREATE TABLE `user`  (
   PRIMARY KEY (`id`) USING BTREE,
   UNIQUE INDEX `uk_userAccount`(`userAccount`) USING BTREE,
   INDEX `idx_userName`(`userName`) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 1985185395728003074 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '用户' ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 1985185395728003074 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '用户' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of user
@@ -286,7 +307,7 @@ CREATE TABLE `user_like`  (
   `create_time` datetime NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`) USING BTREE,
   UNIQUE INDEX `uk_user_target`(`user_id`, `target_id`, `target_type`) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 21 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 21 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Records of user_like
