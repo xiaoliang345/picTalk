@@ -16,8 +16,9 @@ import com.oxn.aiPicturesStore.enums.TaskStatus;
 import com.oxn.aiPicturesStore.exception.BusinessException;
 import com.oxn.aiPicturesStore.exception.ThrowUtils;
 import com.oxn.aiPicturesStore.manager.AiTaskManager;
+import com.oxn.aiPicturesStore.manager.BaiDuAiImgService;
 import com.oxn.aiPicturesStore.manager.CosManager;
-import com.oxn.aiPicturesStore.manager.ImageEditService;
+import com.oxn.aiPicturesStore.manager.QwenImageService;
 import com.oxn.aiPicturesStore.manager.upload.FilePictureUpload;
 import com.oxn.aiPicturesStore.manager.upload.PictureUploadTemplate;
 import com.oxn.aiPicturesStore.manager.upload.UrlPictureUpload;
@@ -85,7 +86,7 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
     private CosManager cosManager;
 
     @Autowired
-    private ImageEditService imageEditService;
+    private QwenImageService imageEditService;
 
     @Autowired
     private TransactionTemplate transactionTemplate;
@@ -103,8 +104,17 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
     @Value("${nginx.proxyUrl}")
     private String ImageAccessPrefix;
 
+    @Autowired
+    private BaiDuAiImgService baiDuAiImgService;
+
     @Resource
     private CosClientConfig cosClientConfig;
+
+    @Value("${limit.create}")
+    private Integer limitCreate;
+
+    @Value("${limit.edit}")
+    private Integer limitEdit;
 
 
     @Override
@@ -502,17 +512,25 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
     @Override
     public String pictureCreateByAI(PictureCreateByAIRequest pictureCreateByAIRequest, User loginUser) {
         String description = pictureCreateByAIRequest.getDescription();
-        //将服务器转发的图片地址转换为存储桶的图片地址
-        String imgUrl = imageEditService.createImage(description);
-        return imgUrl;
 
-        /*String imgUrl="https://ai-pictures-store-1328310172.cos.ap-chongqing.myqcloud.com/public/1969752947225530369/0UsAd.png";
-        try{
-            Thread.sleep(5000);
-        }catch (InterruptedException e){
-            e.printStackTrace();
+        // 2026年2月1日使用百度图片生成接口，其次是通义千问模型
+        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime switchDate = LocalDateTime.of(2026, 2, 1, 0, 0, 0);
+
+        String imgUrl;
+        if (now.isBefore(switchDate)) {
+            //使用通义千问图片生成模型
+            imgUrl = imageEditService.createImage(description);
+        } else {
+            //使用百度图片生成接口
+            try {
+                imgUrl = baiDuAiImgService.generateImage(description);
+            } catch (Exception e) {
+                throw new BusinessException(StatusCode.OPERATION_ERROR, "百度图片生成接口异常");
+            }
         }
-        return imgUrl.replace(ImageAccessPrefix, cosClientConfig.getHost());*/
+
+        return imgUrl;
     }
 
     @Override
@@ -546,10 +564,10 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
             } catch (Exception e) {
                 // 任务失败，减去任务计数
                 ValueOperations<String, String> valueOperations = stringRedisTemplate.opsForValue();
-                String taskCountStr = valueOperations.get("task_count"+ImageOperation.EDIT.getStatus());
+                String taskCountStr = valueOperations.get("task_count" + ImageOperation.EDIT.getStatus());
                 long l = Long.parseLong(taskCountStr);
                 if (l > 0) {
-                    stringRedisTemplate.opsForValue().decrement("task_count"+ImageOperation.EDIT.getStatus());
+                    stringRedisTemplate.opsForValue().decrement("task_count" + ImageOperation.EDIT.getStatus());
                 }
                 aiTaskManager.updateTask(taskId, TaskStatus.FAILED, null, e.getMessage());
             }
@@ -569,10 +587,10 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
             } catch (Exception e) {
                 // 任务失败，减去任务计数
                 ValueOperations<String, String> valueOperations = stringRedisTemplate.opsForValue();
-                String taskCountStr = valueOperations.get("task_count"+ImageOperation.CREATE.getStatus());
+                String taskCountStr = valueOperations.get("task_count" + ImageOperation.CREATE.getStatus());
                 long l = Long.parseLong(taskCountStr);
                 if (l > 0) {
-                    stringRedisTemplate.opsForValue().decrement("task_count"+ImageOperation.CREATE.getStatus());
+                    stringRedisTemplate.opsForValue().decrement("task_count" + ImageOperation.CREATE.getStatus());
                 }
                 aiTaskManager.updateTask(taskId, TaskStatus.FAILED, null, e.getMessage());
             }
@@ -626,8 +644,10 @@ public class PictureServiceImpl extends ServiceImpl<PictureMapper, Picture>
             valueOperations.set("task_count" + imageOperation.getStatus(), "1", between, TimeUnit.SECONDS);
         } else {
             long taskCount = Long.parseLong(taskCountStr);
-            if (taskCount >= 7) {
-                throw new BusinessException(StatusCode.OPERATION_ERROR, "任务数量已达上限");
+            if (ImageOperation.EDIT.equals(imageOperation) && taskCount >= limitEdit) {
+                throw new BusinessException(StatusCode.OPERATION_ERROR, "今日AI编辑图片任务量上限");
+            } else if (ImageOperation.CREATE.equals(imageOperation) && taskCount >= limitCreate) {
+                throw new BusinessException(StatusCode.OPERATION_ERROR, "今日AI创建图片任务量上限");
             }
             Long ttl = stringRedisTemplate.getExpire("task_count" + imageOperation.getStatus(), TimeUnit.SECONDS);
             //判断时间是否过期

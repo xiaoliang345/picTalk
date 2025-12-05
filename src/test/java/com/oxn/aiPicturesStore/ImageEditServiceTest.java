@@ -1,6 +1,6 @@
 package com.oxn.aiPicturesStore;
 
-import com.oxn.aiPicturesStore.manager.ImageEditService;
+import com.oxn.aiPicturesStore.manager.QwenImageService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -11,7 +11,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class ImageEditServiceTest {
 
     @Autowired
-    private ImageEditService imageEditService;
+    private QwenImageService imageEditService;
 
     @Test
     void testEditImage_ShouldReturnImageUrl() {

@@ -15,9 +15,9 @@ import org.springframework.stereotype.Service;
  * 使用通义千问 Image Edit 模型进行图片编辑的工具类
  */
 @Service
-public class ImageEditService {
+public class QwenImageService {
 
-    private static final Logger log = LoggerFactory.getLogger(ImageEditService.class);
+    private static final Logger log = LoggerFactory.getLogger(QwenImageService.class);
 
     @Value("${dashscope.apiKey}")
     private String apiKey;
@@ -177,7 +177,7 @@ public class ImageEditService {
 
         // 构建最终请求体
         JSONObject requestBody = JSONUtil.createObj()
-                .set("model", "qwen-image-plus") // 使用通义图像生成模型
+                .set("model", "qwen-image") // 使用通义图像生成模型
                 .set("input", inputObj)
                 .set("parameters", parametersObj);
 

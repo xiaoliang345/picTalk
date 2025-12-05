@@ -67,3 +67,8 @@ cleanup:
 # 图片访问前缀配置
 nginx:
   proxyUrl: http://www.oxncloud.top/cos
+
+# 每日AI创建图片/删除图片限制
+limit:
+  create: 10
+  edit: 10
