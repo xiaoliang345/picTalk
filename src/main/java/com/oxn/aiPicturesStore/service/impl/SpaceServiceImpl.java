@@ -110,7 +110,7 @@ public class SpaceServiceImpl extends ServiceImpl<SpaceMapper, Space>
                 });
                 return execute;
             }finally {
-                LOCK_MAP.remove(lock);
+                LOCK_MAP.remove(userId);
             }
         }
     }

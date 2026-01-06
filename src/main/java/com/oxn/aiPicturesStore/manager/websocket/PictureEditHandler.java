@@ -64,6 +64,13 @@ public class PictureEditHandler extends TextWebSocketHandler {
         broadcast(pictureId, pictureEditResponseMessage, session);
     }
 
+    /**
+     * 收到消息
+     *
+     * @param session
+     * @param message
+     * @throws Exception
+     */
     @Override
     protected void handleTextMessage(WebSocketSession session, TextMessage message) throws Exception {
         super.handleTextMessage(session, message);
@@ -144,6 +151,13 @@ public class PictureEditHandler extends TextWebSocketHandler {
         }
     }
 
+    /**
+     * 连接关闭
+     *
+     * @param session
+     * @param status
+     * @throws Exception
+     */
     @Override
     public void afterConnectionClosed(WebSocketSession session, CloseStatus status) throws Exception {
         super.afterConnectionClosed(session, status);

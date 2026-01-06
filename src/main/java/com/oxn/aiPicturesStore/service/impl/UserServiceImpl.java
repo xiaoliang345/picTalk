@@ -70,8 +70,6 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
         userQueryWrapper.eq("userPassword", encryptPassword);
         User user = userMapper.selectOne(userQueryWrapper);
         ThrowUtils.throwIf(user == null, StatusCode.PARAMS_ERROR, "账号或密码错误");
-        //4.返回用户信息
-        request.getSession().setAttribute(UserConstant.USER_LOGIN_STATE, user);
         // 3. 记录用户的登录态
         request.getSession().setAttribute(UserConstant.USER_LOGIN_STATE, user);
         // 4. 记录用户登录态到 Sa-token，便于空间鉴权时使用，注意保证该用户信息与 SpringSession 中的信息过期时间一致
