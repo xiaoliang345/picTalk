@@ -1,5 +1,6 @@
 ###Custom###
 application-local.yml
+.env
 
 HELP.md
 target/
@@ -34,5 +35,3 @@ build/
 
 ### VS Code ###
 .vscode/
-/src/main/resources/application-prod.yml
-/src/main/resources/application-local.yml

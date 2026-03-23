@@ -1,11 +1,15 @@
 spring:
-  application: aiPicturesStore
+  application:
+    name: picTalk
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
   profiles:
     active: @spring.profiles.active@
   redis:
     database: 0
-    host: 127.0.0.1
+    host: ${REDIS_HOST:}
     port: 6379
+    password: ${REDIS_PASSWORD:}
     timeout: 5000
   servlet:
     multipart:
@@ -21,10 +25,10 @@ spring:
   #允许跨域的地址
   cors:
     allowed-origin-patterns:
-      - http://8.162.3.140
-      - http://www.oxncloud.top
-      - http://localhost:*
-      - http://127.0.0.1:*
+      - ${ALLOWED_ORIGIN_1:}
+      - ${ALLOWED_ORIGIN_2:}
+      - ${ALLOWED_ORIGIN_3:}
+      - ${ALLOWED_ORIGIN_4:}
 
 server:
   port: 8123
@@ -58,7 +62,7 @@ knife4j:
 
 #文件上传地址
 file:
-  upload-dir: D:/share
+  upload-dir: ${FILE_UPLOAD_DIR:}
 
 # 文件清理配置
 cleanup:
@@ -66,7 +70,7 @@ cleanup:
 
 # 图片访问前缀配置
 nginx:
-  proxyUrl: http://www.oxncloud.top/cos
+  proxyUrl: ${NGINX_PROXY_URL:}
 
 # 每日AI创建图片/删除图片限制
 limit:
