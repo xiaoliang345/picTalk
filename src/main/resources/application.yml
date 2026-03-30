@@ -1,12 +1,16 @@
 spring:
-  application: aiPicturesStore
+  application:
+    name: picTalk
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
   profiles:
-    active: @spring.profiles.active@
+    active: prod
   redis:
     database: 0
-    host: 127.0.0.1
     port: 6379
     timeout: 5000
+    host: 127.0.0.1
+    password:
   servlet:
     multipart:
       max-file-size: 50MB     # 单个文件最大 100MB
@@ -54,8 +58,6 @@ knife4j:
         api-rule-resources:
           - com.oxn.aiPicturesStore.controller
 
-
-
 #文件上传地址
 file:
   upload-dir: D:/share
@@ -66,9 +68,21 @@ cleanup:
 
 # 图片访问前缀配置
 nginx:
-  proxyUrl: http://www.oxncloud.top/cos
+  proxyUrl: ${NGINX_PROXY_URL:http://localhost:8123/api}
 
 # 每日AI创建图片/删除图片限制
 limit:
   create: 10
   edit: 10
+
+# DashScope 配置 qwen 模型
+dashscope:
+  apiUrl: https://dashscope.aliyuncs.com/api/v1/services/aigc/multimodal-generation/generation
+
+# 百度云 AI
+baidu:
+  url: https://qianfan.baidubce.com/v2/musesteamer/images/generations
+  model: musesteamer-air-image
+  size: 1328x1328
+  n: 1
+  promptExtend: true

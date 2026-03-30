@@ -139,6 +139,13 @@
             <version>2.21.12</version>
         </dependency>
 
+        <!-- dotenv 环境变量加载 -->
+        <dependency>
+            <groupId>io.github.cdimascio</groupId>
+            <artifactId>dotenv-java</artifactId>
+            <version>3.0.2</version>
+        </dependency>
+
         <!-- 分库分表 -->
         <dependency>
             <groupId>org.apache.shardingsphere</groupId>
@@ -188,7 +195,7 @@
         <resources>
             <resource>
                 <directory>src/main/resources</directory>
-                <filtering>true</filtering>
+                <filtering>false</filtering>
             </resource>
         </resources>
         <plugins>

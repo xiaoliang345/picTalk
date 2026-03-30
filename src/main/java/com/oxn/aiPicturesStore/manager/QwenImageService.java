@@ -19,10 +19,10 @@ public class QwenImageService {
 
     private static final Logger log = LoggerFactory.getLogger(QwenImageService.class);
 
-    @Value("${dashscope.apiKey}")
+    @Value("${dashscope.apiKey:}")
     private String apiKey;
 
-    @Value("${dashscope.apiUrl}")
+    @Value("${dashscope.apiUrl:https://dashscope.aliyuncs.com/api/v1/services/aigc/multimodal-generation/generation}")
     private String apiUrl;
 
     /**
@@ -79,7 +79,7 @@ public class QwenImageService {
 
         // 构建最终请求体
         JSONObject requestBody = JSONUtil.createObj()
-                .set("model", "qwen-image-edit")
+                .set("model", "qwen-image-edit-plus")
                 .set("input", inputObj)
                 .set("parameters", parametersObj);
 

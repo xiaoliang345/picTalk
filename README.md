@@ -113,68 +113,29 @@ aiPicturesStore/
 2. **创建数据库并导入初始化脚本**  
    创建名为 `picTalk` 的 MySQL 数据库，并执行项目中的 SQL 初始化脚本。
 
-3. **新建环境配置文件**  
-   在 `src/main/resources/` 目录下，分别创建以下两个配置文件：
+3. **配置环境文件**  
+   在 `src/main/resources/` 目录下创建环境配置文件：
 
-   - **本地开发环境**：`application-local.yml`
-   - **生产环境**：`application-prod.yml`
+   - **本地开发环境**：创建 `application-local.yml`
+   - **生产环境**：创建 `application-prod.yml`
 
-   并在两个文件中填入对应的配置信息（示例如下）：
+   > 💡 **配置文件说明**：
+   > - `application-local.yml`：本地开发使用，配置本地数据库和测试服务
+   > - `application-prod.yml`：生产部署使用，配置线上数据库和服务
+   > - 两个文件的配置模板请参考项目代码中的实际结构
+   > - 敏感信息（数据库密码、API Key 等）请勿提交到版本控制系统
 
-   ```yaml
-   # application-local.yml 或 application-prod.yml
-   spring:
-     datasource:
-       driver-class-name: com.mysql.cj.jdbc.Driver
-       url: jdbc:mysql://localhost:3306/picTalk
-       username: your_db_username      # 替换为你的数据库用户名
-       password: your_db_password      # 替换为你的数据库密码
-
-   cos:
-     client:
-       host: https://cos.<region>.myqcloud.com  # 替换为实际 COS 访问域名
-       secretId: your_secret_id                 # 替换为腾讯云 SecretId
-       secretKey: your_secret_key               # 替换为腾讯云 SecretKey
-       region: ap-beijing                       # 替换为你的 COS 所在区域，如 ap-shanghai
-       bucket: your-bucket-name-1250000000      # 替换为你的存储桶名称（含 APPID）
-
-   # DashScope 配置阿里百炼
-   dashscope:
-      apiKey: your_dashscope_api_key  # 替换为你的DashScope API Key
-      apiUrl: https://dashscope.aliyuncs.com/api/v1/services/aigc/multimodal-generation/generation
-   ```
-
-   > ⚠️ **重要安全提示**：  
-   > - 请勿将真实的敏感信息（数据库密码、API Key、密钥等）提交到版本控制系统
-   > - 确保 `application-local.yml` 和 `application-prod.yml` 已添加到 `.gitignore`
-   > - 在团队合作中，通过环境变量或密钥管理服务来传递敏感配置信息
-
-   > 💡 提示：  
-   > - `application-local.yml` 用于本地开发，可连接本地 MySQL 和测试用 COS；  
-   > - `application-prod.yml` 用于生产部署，应填写线上数据库和正式 COS 配置；  
-   > - 启动时通过 `--spring.profiles.active=local` 或 `prod` 指定使用哪个配置。
-
-4. **使用 Maven 编译项目**：
-   ```bash
-   mvn clean install
-   ```
-
-5. **启动项目**（以本地环境为例）：
+4. **启动项目**：
+   
+   **本地开发**：
    ```bash
    mvn spring-boot:run --spring.profiles.active=local
    ```
 
-   若部署到生产环境，可打包后运行：
+   **生产环境**：
    ```bash
-   java -jar target/your-app.jar --spring.profiles.active=prod
+   java -jar target/aiPicturesStore-0.0.1-SNAPSHOT.jar --spring.profiles.active=prod
    ```
-```
-
-或者打包后运行：
-```
-mvn package
-java -jar target/aiPicturesStore-0.0.1-SNAPSHOT.jar
-```
 
 ## API 文档
 

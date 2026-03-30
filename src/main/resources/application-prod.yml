@@ -1,0 +1,25 @@
+spring:
+  datasource:
+    url: ${DB_URL}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+  redis:
+    host: ${REDIS_HOST}
+    password: ${REDIS_PASSWORD}
+
+#腾讯云存储
+cos:
+  client:
+    host: ${COS_HOST}
+    secretId: ${COS_SECRET_ID}
+    secretKey: ${COS_SECRET_KEY}
+    region: ${COS_REGION}
+    bucket: ${COS_BUCKET}
+
+# 阿里百炼配置
+dashscope:
+  apiKey: ${DASHSCOPE_API_KEY}
+
+# 百度云 AI
+baidu:
+  apiKey: ${BAIDU_API_KEY}
