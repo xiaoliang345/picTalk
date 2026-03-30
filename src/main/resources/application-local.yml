@@ -1,0 +1,29 @@
+spring:
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: ${LOCAL_DB_URL:}
+    username: ${LOCAL_DB_USERNAME:}
+    password: ${LOCAL_DB_PASSWORD:}
+
+cos:
+  client:
+    host: ${COS_HOST:}
+    secretId: ${COS_SECRET_ID:}
+    secretKey: ${COS_SECRET_KEY:}
+    region: ${COS_REGION:}
+    bucket: ${COS_BUCKET:}
+
+# DashScope 配置 qwen 模型
+dashscope:
+  apiKey: ${DASHSCOPE_API_KEY:}
+  apiUrl: ${DASHSCOPE_API_URL:}
+
+
+# 百度云 AI
+baidu:
+  apiKey: ${BAIDU_API_KEY:}
+  url: ${BAIDU_API_URL:}
+  model: ${BAIDU_MODEL:}
+  size: ${BAIDU_SIZE:}
+  n: ${BAIDU_N:}
+  promptExtend: ${BAIDU_PROMPT_EXTEND:}
