@@ -1,16 +1,23 @@
+server:
+  port: 8123
+  servlet:
+    context-path: /api
 spring:
   application:
     name: picTalk
-  datasource:
-    driver-class-name: com.mysql.cj.jdbc.Driver
   profiles:
     active: prod
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://${database.ip}:3306/picTalk?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
+    username: ${database.username}
+    password: ${database.password}
   redis:
     database: 0
     port: 6379
     timeout: 5000
-    host: 127.0.0.1
-    password:
+    host: ${redis.host}
+    password: ${redis.password}
   servlet:
     multipart:
       max-file-size: 50MB     # 单个文件最大 100MB
@@ -24,16 +31,7 @@ spring:
 
   #允许跨域的地址
   cors:
-    allowed-origin-patterns:
-      - http://8.162.3.140
-      - http://www.oxncloud.top
-      - http://localhost:*
-      - http://127.0.0.1:*
-
-server:
-  port: 8123
-  servlet:
-    context-path: /api
+    allowed-origin-patterns: ${cors.allowedpatterns}
 
 mybatis-plus:
   configuration:
@@ -58,22 +56,18 @@ knife4j:
         api-rule-resources:
           - com.oxn.aiPicturesStore.controller
 
-#文件上传地址
-file:
-  upload-dir: D:/share
-
 # 文件清理配置
 cleanup:
   cron: 0 */10 * * * ?
 
 # 图片访问前缀配置
 nginx:
-  proxyUrl: ${NGINX_PROXY_URL:http://localhost:8123/api}
+  proxyUrl: ${nginx.proxyUrl}
 
 # 每日AI创建图片/删除图片限制
 limit:
-  create: 10
-  edit: 10
+  create: ${limit.create}
+  edit: ${limit.edit}
 
 # DashScope 配置 qwen 模型
 dashscope:

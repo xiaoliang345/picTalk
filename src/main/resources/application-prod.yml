@@ -1,11 +1,17 @@
-spring:
-  datasource:
-    url: ${DB_URL}
-    username: ${DB_USERNAME}
-    password: ${DB_PASSWORD}
-  redis:
-    host: ${REDIS_HOST}
-    password: ${REDIS_PASSWORD}
+#mysql数据库
+database:
+  ip: ${DB_IP}
+  username: ${DB_USERNAME}
+  password: ${DB_PASSWORD}
+
+#redis
+redis:
+  host: ${REDIS_HOST}
+  password: ${REDIS_PASSWORD}
+
+#跨域地址列表
+cors:
+  allowedpatterns: ${CORS_ALLOWED_PATTERNS}
 
 #腾讯云存储
 cos:
@@ -16,10 +22,19 @@ cos:
     region: ${COS_REGION}
     bucket: ${COS_BUCKET}
 
-# 阿里百炼配置
+#阿里百炼
 dashscope:
   apiKey: ${DASHSCOPE_API_KEY}
 
 # 百度云 AI
 baidu:
   apiKey: ${BAIDU_API_KEY}
+
+# 图片访问前缀配置
+nginx:
+  proxyUrl: ${NGINX_PROXY_URL}
+
+# 每日AI创建图片/删除图片限制
+limit:
+  create: 10
+  edit: 5

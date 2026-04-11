@@ -1,8 +1,19 @@
-spring:
-  datasource:
-    url: jdbc:mysql://localhost:3306/picTalk?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
-    username: root
-    password: 123456
+#mysql数据库
+database:
+  ip: localhost
+  username: root
+  password: 123456
+
+#redis
+redis:
+  host: localhost
+  password:
+
+#跨域地址列表
+cors:
+  allowedpatterns: http://8.162.3.140,http://www.oxncloud.top,http://localhost:*,http://127.0.0.1:*
+
+#腾讯云存储
 cos:
   client:
     host: ${COS_HOST}
@@ -11,10 +22,19 @@ cos:
     region: ${COS_REGION}
     bucket: ${COS_BUCKET}
 
-# DashScope 配置
+#阿里百炼
 dashscope:
   apiKey: ${DASHSCOPE_API_KEY}
 
 # 百度云 AI
 baidu:
   apiKey: ${BAIDU_API_KEY}
+
+# 图片访问前缀配置
+nginx:
+  proxyUrl: http://localhost:8123/api
+
+# 每日AI创建图片/删除图片限制
+limit:
+  create: 10
+  edit: 5
